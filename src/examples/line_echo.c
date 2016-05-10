@@ -20,24 +20,24 @@ int main(void)
   for ( ; ; )
   {
     length = getline(buf, 10);
-    
+
     if (length != mystrlen(buf))
       exit(111);
 
     if (length < 1)
       break;
-    
+
     write(STDOUT_FILENO, buf, length);
     write(STDOUT_FILENO, &endl, 1);
   }
-  
+
   return 0;
 }
 
 int getline(char *buf, int size)
 {
   int i;
-  
+
   for (i = 0; i < size-1; ++i)
   {
     if (read(STDIN_FILENO, &buf[i], 1) != 1)
@@ -52,9 +52,9 @@ int getline(char *buf, int size)
 int mystrlen(char *start)
 {
   char* end = start;
-  
+
   while(*end != '\0')
     ++end;
-  
+
   return (end - start);
 }

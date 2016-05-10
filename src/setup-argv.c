@@ -225,7 +225,7 @@ void* setup_main_stack(const char* command_line, void* stack_top)
 
   /* copy the command_line to where it should be in the stack */
   for (size_t i = 0; i < line_size; i++) {
-    cmd_line_on_stack[i] = command-line[i];
+    cmd_line_on_stack[i] = command_line[i];
   }
   /* build argv array and insert null-characters after each word */
   esp->argv[0] = &cmd_line_on_stack[0];

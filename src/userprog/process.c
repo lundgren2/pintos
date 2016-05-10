@@ -22,14 +22,128 @@
 #include "userprog/flist.h"
 #include "userprog/plist.h"
 
-/* HACK defines code you must remove and implement in a proper way */
-#define HACK
+static struct System_process_list SPL;
+
+/*
+ pintos -p ../../examples/sumargv -a sumargv -v -k --fs-disk=2 -- -f -q run 'sumargv 1 2 3 4'
+*/
+
+
+/* FROM setup-argv.c */
+
+
+bool exists_in(char c, const char* d)
+{
+  int i = 0;
+  while (d[i] != '\0' && d[i] != c)
+  ++i;
+  return (d[i] == c);
+}
+
+/* Return the number of words in 'buf'. A word is defined as a
+* sequence of characters not containing any of the characters in
+* 'delimeters'.
+* NOTE: arguments must be '\0'-terminated c-strings
+*/
+int count_args(const char* buf, const char* delimeters)
+{
+  int i = 0;
+  bool prev_was_delim;
+  bool cur_is_delim = true;
+  int argc = 0;
+
+  while (buf[i] != '\0')
+  {
+    prev_was_delim = cur_is_delim;
+    cur_is_delim = exists_in(buf[i], delimeters);
+    argc += (prev_was_delim && !cur_is_delim);
+    ++i;
+  }
+  return argc;
+}
+
+/* Replace calls to STACK_DEBUG with calls to printf. All such calls
+* easily removed later by replacing with nothing. */
+#define STACK_DEBUG(...) printf(__VA_ARGS__)
+
+void* setup_main_stack(const char* command_line, void* stack_top)
+{
+  /* Variable "esp" stores an address, and at the memory loaction
+  * pointed out by that address a "struct main_args" is found.
+  * That is: "esp" is a pointer to "struct main_args" */
+  struct main_args* esp;
+  int argc;
+  int total_size;
+  int line_size;
+  /* "cmd_line_on_stack" and "ptr_save" are variables that each store
+  * one address, and at that address (the first) char (of a possible
+  * sequence) can be found. */
+  char* cmd_line_on_stack;
+  char* ptr_save;
+  int i = 0;
+
+  /* calculate the bytes needed to store the command_line */
+  line_size = strlen(command_line)+1;
+  STACK_DEBUG("# line_size = %d\n", line_size);
+
+  /* round up to make it even divisible by 4 */
+  while (line_size % 4 != 0) {
+    line_size += 1;
+  }
+
+  STACK_DEBUG("# line_size (aligned) = %d\n", line_size);
+
+  /* calculate how many words the command_line contain */
+  {
+    const char * tmp = " ";
+    argc = count_args(command_line, tmp);
+    STACK_DEBUG("# argc = %d\n", argc);
+  }
+  /* calculate the size needed on our simulated stack */
+  total_size = line_size + (argc+4)*4;
+  STACK_DEBUG("# total_size = %d\n", total_size);
+
+
+  /* calculate where the final stack top will be located */
+  esp = stack_top - total_size;
+
+  /* setup return address and argument count */
+  esp->ret = 0;
+  esp->argc = argc;
+  /* calculate where in the memory the argv array starts */
+  esp->argv = &esp->argc+2;
+
+  /* calculate where in the memory the words is stored */
+  cmd_line_on_stack = &esp->argv[argc+1];
+
+  /* copy the command_line to where it should be in the stack */
+  for (size_t i = 0; i < line_size; i++) {
+    cmd_line_on_stack[i] = command_line[i];
+  }
+  /* build argv array and insert null-characters after each word */
+  esp->argv[0] = &cmd_line_on_stack[0];
+  int argv_count = 1;
+  for (size_t i = 1; i < line_size; i++) {
+    if (cmd_line_on_stack[i] == ' ') {
+      cmd_line_on_stack[i] = '\0'; // Insert null-character
+      esp->argv[argv_count++] = &cmd_line_on_stack[i+1];
+
+      if(argv_count >= argc)
+        break;
+    }
+  }
+
+  return esp; /* the new stack top */
+}
+
+/* END setup-argv.c */
 
 
 /* This function is called at boot time (threads/init.c) to initialize
  * the process subsystem. */
 void process_init(void)
 {
+  process_list_init(&SPL);
 }
 
 /* This function is currently never called. As thread_exit does not
@@ -45,6 +159,7 @@ void process_exit(int status UNUSED)
  * relevant debug information in a clean, readable format. */
 void process_print_list()
 {
+  process_list_print(&SPL);
 }
 
 
@@ -149,7 +264,7 @@ start_process (struct parameters_to_start_process* parameters)
        C-function expects the stack to contain, in order, the return
        address, the first argument, the second argument etc. */
 
-    HACK if_.esp -= 12; /* Unacceptable solution. */
+    //HaACK if_.esp -= 12; /* Unacceptable solution. */
 
     /* The stack and stack pointer should be setup correct just before
        the process start, so this is the place to dump stack content

@@ -11,13 +11,25 @@ int process_wait (tid_t);
 void process_cleanup (void);
 void process_activate (void);
 
-/* This is unacceptable solutions. */
+struct main_args
+{
+  void (*ret)(void);
+  int argc;
+  char** argv;
+};
+
+bool exists_in(char c, const char* d);
+int count_args(const char* buf, const char* delimeters);
+void* setup_main_stack(const char* command_line, void* stack_top);
+
+
+/* This is unacceptable solutions.
 #define INFINITE_WAIT() for ( ; ; ) thread_yield()
 #define BUSY_WAIT(n)       \
     do {                   \
       int i = n;           \
       while ( i --> 0 )    \
         thread_yield();    \
-    } while ( 0 )
+    } while ( 0 )*/
 
 #endif /* userprog/process.h */
