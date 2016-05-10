@@ -25,15 +25,14 @@ syscall_init (void)
 /* This array defined the number of arguments each syscall expects.
    For example, if you want to find out the number of arguments for
    the read system call you shall write:
-<<<<<<< HEAD
+
 
    int sys_read_arg_count = argc[ SYS_READ ];
 
-=======
+
 
    int sys_read_arg_count = argc[ SYS_READ ];
 
->>>>>>> c4e42961e885612ca2b84dd0246d09b86aad2b97
    All system calls have a name such as SYS_READ defined as an enum
    type, see `lib/syscall-nr.h'. Use them instead of numbers.
  */
@@ -91,6 +90,7 @@ static int32_t sys_console_write_ (char * FD, char * buf, const unsigned size) {
   putbuf (buf, (size_t)size);
   return (int32_t)size;
 }
+
 
   static void
 syscall_handler (struct intr_frame *f)
@@ -161,21 +161,6 @@ NULL;
   default:
     {
       printf ("Executed an unknown system calssssl!\n");
-
-      printf ("Stack top + 0: %d\n", esp[0]);
-      printf ("Stack top + 1: %d\n", esp[1]);
-
-=======
-static void
-syscall_handler (struct intr_frame *f)
-{
-  int32_t* esp = (int32_t*)f->esp;
-
-  switch ( 0 /* retrive syscall number */ )
-  {
-    default:
-    {
-      printf ("Executed an unknown system call!\n");
 
       printf ("Stack top + 0: %d\n", esp[0]);
       printf ("Stack top + 1: %d\n", esp[1]);

@@ -1,5 +1,4 @@
 #include <stddef.h>
-<<<<<<< HEAD
 #include "flist.h"
 
 void map_init(struct map* m){
@@ -29,8 +28,3 @@ value_t map_remove(struct map* m, key_t k) {
   m->content[k-2] = NULL;
   return tmp;
 }
-=======
-
-#include "flist.h"
-  
->>>>>>> c4e42961e885612ca2b84dd0246d09b86aad2b97

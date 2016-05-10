@@ -1,5 +1,16 @@
 #ifndef _MAP_H_
 #define _MAP_H_
+#include "filesys/file.h"
+#include "lib/stdbool.h"
+
+//#define value_t file*
+typedef struct file* value_t;
+#define MAP_SIZE 16 // max 16 files in pintos
+#define key_t int
+
+struct map {
+  value_t content[MAP_SIZE];
+};
 
 /* Place functions to handle a process open files here (file list).
 
@@ -12,21 +23,16 @@
      and a process id INSERT this in a list of files. Return an
      integer that can be used to find the opened file later.
 */
-#define value_t file*
-#define MAP_SIZE 16
-#define key_t int
+//typedef struct file* value_t;
 
-struct map {
-  value_t content[MAP_SIZE];
-};
 
 void map_init(struct map* m);
-
 key_t map_insert(struct map* m, value_t v);
+value_t map_find(struct map* m, key_t FD);
+value_t map_remove(struct map* m, key_t FD);
 
-value_t map_find(struct map* m, key_t k);
-
-value_t map_remove(struct map* m, key_t k);
+void map_for_each(struct map* m, void(*exec)(key_t k, value_t v, int aux), int aux);
+void map_remove_if(struct map* m, bool (*cond)(key_t k, value_t v, int aux), int aux);
 
 /*
    - A function that given an integer (obtained from above function)
@@ -46,7 +52,7 @@ value_t map_remove(struct map* m, key_t k);
    considered OPEN files and must be added to a list or else kept
    track of, to guarantee ALL open files are eventyally CLOSED
    (probably when removed from the list(s)).
-
+*/
 /* Place code to keep track of your per-process open file table here.
  *
  * (The system-wide open file table exist as part of filesys/inode.c )
