@@ -22,6 +22,7 @@
 #include "userprog/flist.h"
 #include "userprog/plist.h"
 
+#define HACK
 static struct System_process_list SPL;
 
 /*
