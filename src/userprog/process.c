@@ -167,6 +167,8 @@ void process_print_list()
 struct parameters_to_start_process
 {
   char* command_line;
+  struct semaphore sema;
+  bool init_ok;
 };
 
 static void
@@ -266,6 +268,8 @@ start_process (struct parameters_to_start_process* parameters)
        address, the first argument, the second argument etc. */
 
     //HaACK if_.esp -= 12; /* Unacceptable solution. */
+    parameters->init_ok = true;
+    if_.esp = setup_main_stack(parameters->command_line, if_.esp);
 
     /* The stack and stack pointer should be setup correct just before
        the process start, so this is the place to dump stack content
