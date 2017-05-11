@@ -13,7 +13,15 @@
 #include "threads/vaddr.h"
 #ifdef USERPROG
 #include "userprog/process.h"
+
+#include "userprog/flist.h"
 #endif
+
+/*
+Own test
+pintos -p ../examples/sumargv -a sumargv -v -k --fs-disk=2 -- -f -q -tcl=2 run 'sumargv 1 2 3'
+
+*/
 
 /* Random value for struct thread's `magic' member.
    Used to detect stack overflow.  See the big comment at the top
@@ -115,6 +123,7 @@ init_thread (struct thread *t, const char *name, int priority)
   t->magic = THREAD_MAGIC;
 
   /* YES! You may want add stuff here. */
+  map_init(&t->file_map); //new
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
