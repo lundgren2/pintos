@@ -231,7 +231,11 @@ void* setup_main_stack(const char* command_line, void* stack_top)
   esp->argv[0] = &cmd_line_on_stack[0];
   int argv_count = 1;
   for (size_t i = 1; i < line_size; i++) {
+    //printf("%d: %s\n", i,&cmd_line_on_stack[i] );
+
     if (cmd_line_on_stack[i] == ' ') {
+      //printf("line: %s\n", &cmd_line_on_stack[i] );
+      //printf("%d\n", i );
       cmd_line_on_stack[i] = '\0'; // Insert null-character
       esp->argv[argv_count++] = &cmd_line_on_stack[i+1];
 
