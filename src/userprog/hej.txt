@@ -1,9 +1,0 @@
-cd $HOME/TDIU16*/pintos/src/userprog
-make -j8 -C ../examples
-make -j8
-
-
-pintos -p ../examples/sumargv -a sumargv -v -k --fs-disk=2 -- -f -q run sumargv
-
-pintos -p ../examples/halt -a halt -v -k --fs-disk=2 -- -f -q run halt
-
