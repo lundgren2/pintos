@@ -191,6 +191,8 @@ process_execute (const char *command_line)
 
   /* LOCAL variable will cease existence when function return! */
   struct parameters_to_start_process arguments;
+  // Nu behöver vi initera semaphoren
+  sema_init(&arguments.sema, 0);
 
   debug("%s#%d: process_execute(\"%s\") ENTERED\n",
         thread_current()->name,
@@ -206,20 +208,30 @@ process_execute (const char *command_line)
 
   strlcpy_first_word (debug_name, command_line, 64);
 
+  debug("====== INNAN THREAD_CREATE\n");
   /* SCHEDULES function `start_process' to run (LATER) */
   thread_id = thread_create (debug_name, PRI_DEFAULT,
                              (thread_func*)start_process, &arguments);
+  debug("====== EFTER THREAD_CREATE\n");
 
-  process_id = thread_id;
+  if (arguments.init_ok == false){
+    debug("====== INIT_OK FALSE\n");
+
+    process_id = -1;
+  } else {
+    debug("====== INIT_OK TRUE\n");
+
+    process_id = thread_id;
+  }
+
 
   /* AVOID bad stuff by turning off. YOU will fix this! */
   // Om vi tar bort denna så kommer vi få massa konstiga tecken i parameters->command_line när vi freear nedan.
-  power_off();
-
-  // If thread_create is current thread ?
-  // If thread_create works 
+  // power_off();
+  
+  // Vi får inte vi släppa command_line innan alla child är döda ??
   if (process_id != -1) {
-    process_id = arguments.pid;
+    sema_down(&arguments.sema);
   }
 
 
@@ -243,8 +255,9 @@ start_process (struct parameters_to_start_process* parameters)
   /* The last argument passed to thread_create is received here... */
   struct intr_frame if_;
   bool success;
-
   char file_name[64];
+  parameters->init_ok = false;
+
   debug("======== parameters->command_line: %s\n END OF PARAMETERS!\n", parameters->command_line);
   strlcpy_first_word (file_name, parameters->command_line, 64);
 
@@ -280,20 +293,26 @@ start_process (struct parameters_to_start_process* parameters)
        C-function expects the stack to contain, in order, the return
        address, the first argument, the second argument etc. */
     
-    // create a new child process
+    // Skapa ny process och ge den värden
 
     struct Process plist;
-    plist.process_id = thread_current->tid;
-    plist.process_name = thread_current->name;
+    plist.process_id = thread_current()->tid;
+    plist.process_name = thread_current()->name;
     plist.parent_id = parameters->pid;
     plist.exit_status = -1;
     plist.free = false;
     plist.process_alive = true;
     plist.parent_alive = true;
 
-    DEBUG("==== STARTING PROCESS pid: %d", plist.process_id );
+    debug("==== STARTING PROCESS pid: %d\n", plist.process_id);
     parameters->init_ok = true;
 
+    // Lägg till i processlistan
+    process_list_insert(&SPL, plist);
+
+    debug("==== PROCESS pid: %d Added to Process List\n", plist.process_id);
+    // TODO: remove print here / TL
+    process_list_print(&SPL);
 
     // HACK if_.esp -= 12; /* Unacceptable solution. */
     if_.esp = setup_main_stack(parameters->command_line, if_.esp);
@@ -302,7 +321,7 @@ start_process (struct parameters_to_start_process* parameters)
        the process start, so this is the place to dump stack content
        for debug purposes. Disable the dump when it works. */
 
-//    dump_stack ( PHYS_BASE + 15, PHYS_BASE - if_.esp + 16 );
+    // dump_stack ( PHYS_BASE + 15, PHYS_BASE - if_.esp + 16 );
 
   }
 
@@ -320,6 +339,7 @@ start_process (struct parameters_to_start_process* parameters)
   */
   if ( ! success )
   {
+    sema_up(&parameters->sema); // new 1/2-18
     thread_exit ();
   }
 
