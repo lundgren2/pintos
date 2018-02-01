@@ -17,4 +17,7 @@ void timer_nsleep (int64_t nanoseconds);
 
 void timer_print_stats (void);
 
+/* used by thread test programs */
+extern uint16_t TIMER_FREQ;
+
 #endif /* devices/timer.h */

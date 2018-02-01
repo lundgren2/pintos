@@ -17,8 +17,8 @@ static int64_t ticks;
    Initialized by timer_calibrate(). */
 static unsigned loops_per_tick;
 
-/* Interrupts per second, writen only by timer_init */
-static uint16_t TIMER_FREQ = 0;
+/* Interrupts per second, written only by timer_init */
+uint16_t TIMER_FREQ = 0;
 
 static intr_handler_func timer_interrupt;
 static bool too_many_loops (unsigned loops);
