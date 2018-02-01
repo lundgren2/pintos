@@ -235,7 +235,11 @@ start_process (struct parameters_to_start_process* parameters)
   bool success;
 
   char file_name[64];
+  debug("======== parameters->command_line: %s\n END OF PARAMETERS!\n", parameters->command_line);
   strlcpy_first_word (file_name, parameters->command_line, 64);
+
+  // debug("======== File_name: %s\n", file_name);
+
 
   debug("%s#%d: start_process(\"%s\") ENTERED\n",
         thread_current()->name,
@@ -247,7 +251,7 @@ start_process (struct parameters_to_start_process* parameters)
   if_.gs = if_.fs = if_.es = if_.ds = if_.ss = SEL_UDSEG;
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
-
+  // c
   success = load (file_name, &if_.eip, &if_.esp);
 
   debug("%s#%d: start_process(...): load returned %d\n",
@@ -267,7 +271,7 @@ start_process (struct parameters_to_start_process* parameters)
        C-function expects the stack to contain, in order, the return
        address, the first argument, the second argument etc. */
 
-    //HaACK if_.esp -= 12; /* Unacceptable solution. */
+    // HACK if_.esp -= 12; /* Unacceptable solution. */
     parameters->init_ok = true;
     if_.esp = setup_main_stack(parameters->command_line, if_.esp);
 
