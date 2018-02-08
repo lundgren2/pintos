@@ -53,20 +53,21 @@ void  process_list_print(struct System_process_list * SPL){
     return NULL;
   }
   lock_acquire(&SPL->l);
-  printf("\t\t== PROCESS LIST ==\n");
-  printf("ID\t PARENT ID\t NAME\t EXIT_STATS\n");
+  printf("\n\t\t==== PROCESS LIST ====\n");
+  printf("ID\t PARENT ID\t NAME\t\t EXIT_STATUS\n");
 
   int i = 0;
   for (;i<MAX_PROCESS; i++) {
     if (SPL->plist_[i].process_id == 0) {
       break;
     }
-    printf("%i\t %i\t\t %s\t %i \n",
-          SPL->plist_[i].process_id,
-          SPL->plist_[i].parent_id,
-          SPL->plist_[i].process_name,
-          SPL->plist_[i].exit_status
-          );
+    printf("%i\t %i\t\t %s\t\t %i \n",
+           SPL->plist_[i].process_id,
+           SPL->plist_[i].parent_id,
+           SPL->plist_[i].process_name,
+           SPL->plist_[i].exit_status);
   }
+  
+  printf("\n");
   lock_release(&SPL->l);
 }
