@@ -93,9 +93,9 @@ struct thread
 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
+    /* YES! You may want to add stuff. But make note of point 2 above. */
     struct map file_map;
     int pid;
-    /* YES! You may want to add stuff. But make note of point 2 above. */
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
