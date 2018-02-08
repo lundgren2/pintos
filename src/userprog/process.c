@@ -212,15 +212,14 @@ process_execute (const char *command_line)
   thread_id = thread_create (debug_name, PRI_DEFAULT,
                              (thread_func*)start_process, &arguments);
 
-  sema_down(&arguments.sema);
+  if (thread_id != -1) {
+    sema_down(&arguments.sema);
+  }
 
   if (arguments.init_ok == false){
     debug("====== INIT_OK FALSE\n");
-
     process_id = -1;
   } else {
-    debug("====== INIT_OK TRUE\n");
-
     process_id = thread_id;
   }
 
