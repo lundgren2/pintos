@@ -208,11 +208,11 @@ process_execute (const char *command_line)
 
   strlcpy_first_word (debug_name, command_line, 64);
 
-  debug("====== INNAN THREAD_CREATE\n");
   /* SCHEDULES function `start_process' to run (LATER) */
   thread_id = thread_create (debug_name, PRI_DEFAULT,
                              (thread_func*)start_process, &arguments);
-  debug("====== EFTER THREAD_CREATE\n");
+
+  sema_down(&arguments.sema);
 
   if (arguments.init_ok == false){
     debug("====== INIT_OK FALSE\n");
@@ -224,15 +224,16 @@ process_execute (const char *command_line)
     process_id = thread_id;
   }
 
+  process_list_print(&SPL);
 
   /* AVOID bad stuff by turning off. YOU will fix this! */
   // Om vi tar bort denna så kommer vi få massa konstiga tecken i parameters->command_line när vi freear nedan.
   // power_off();
   
   // Vi får inte vi släppa command_line innan alla child är döda ??
-  if (process_id != -1) {
-    sema_down(&arguments.sema);
-  }
+  // if (process_id != -1) {
+  //   sema_down(&arguments.sema);
+  // }
 
 
   /* WHICH thread may still be using this right now? */
@@ -244,6 +245,7 @@ process_execute (const char *command_line)
         command_line, process_id);
 
   /* MUST be -1 if `load' in `start_process' return false */
+  debug("Process_id in process_execute(): %d", process_id );
   return process_id;
 }
 
@@ -258,10 +260,7 @@ start_process (struct parameters_to_start_process* parameters)
   char file_name[64];
   parameters->init_ok = false;
 
-  debug("======== parameters->command_line: %s\n END OF PARAMETERS!\n", parameters->command_line);
   strlcpy_first_word (file_name, parameters->command_line, 64);
-
-  // debug("======== File_name: %s\n", file_name);
 
   debug("%s#%d: start_process(\"%s\") ENTERED\n",
         thread_current()->name,
@@ -322,8 +321,8 @@ start_process (struct parameters_to_start_process* parameters)
        for debug purposes. Disable the dump when it works. */
 
     // dump_stack ( PHYS_BASE + 15, PHYS_BASE - if_.esp + 16 );
-
   }
+  sema_up(&parameters->sema);
 
   debug("%s#%d: start_process(\"%s\") DONE\n",
         thread_current()->name,
@@ -339,7 +338,7 @@ start_process (struct parameters_to_start_process* parameters)
   */
   if ( ! success )
   {
-    sema_up(&parameters->sema); // new 1/2-18
+    // sema_up(&parameters->sema); // new 1/2-18
     thread_exit ();
   }
 
