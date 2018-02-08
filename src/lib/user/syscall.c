@@ -183,3 +183,18 @@ inumber (int fd)
   return syscall1 (SYS_INUMBER, fd);
 }
 
+// 3 http://www.ida.liu.se/~TDIU16/2017/lab/pdf/17sysexec.pdf
+void sleep(int millis)
+{
+  syscall1(SYS_SLEEP, millis);
+}
+
+void plist(void)
+{
+  syscall0(SYS_PLIST);
+}
+
+int nr_of_calls(void)
+{
+  return syscall0(SYS_NUMBER_OF_CALLS);
+}
