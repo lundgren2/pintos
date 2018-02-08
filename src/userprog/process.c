@@ -224,7 +224,6 @@ process_execute (const char *command_line)
     process_id = thread_id;
   }
 
-  process_list_print(&SPL);
 
   /* AVOID bad stuff by turning off. YOU will fix this! */
   // Om vi tar bort denna så kommer vi få massa konstiga tecken i parameters->command_line när vi freear nedan.
