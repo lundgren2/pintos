@@ -104,7 +104,7 @@ static int32_t sys_open_file_(char* filepath){
   struct file * f = filesys_open(filepath);
   if(f != NULL){
     int32_t retval = map_insert(m,f);
-    return retval;
+    return retval; // -1 if map_insert fails
   }else{
     return (int32_t)-1;
   }
@@ -154,6 +154,8 @@ void sys_plist_ (void) {
   process_print_list();
 }
 
+
+// TODO: Refactor syscall handler to be more readable!!
 static void
 syscall_handler (struct intr_frame *f)
 {

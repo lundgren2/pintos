@@ -17,6 +17,8 @@ key_t map_insert(struct map* m, value_t v) {
       return i+2;
     }
   }
+  free(v); // remove pointer to uninseted file
+  return -1;
 }
 
 value_t map_find(struct map* m, key_t k) {
