@@ -1,12 +1,26 @@
 # TDIU16 - Pintos
 
-
 #### Att göra:
-* Kontrollera varför setup-argv.c missar två space.
-* ~~170509 - Fixa test för create file test.~~
+
+* 170509 - Fixa test för create file test.
 * Kolla om userprog/process.c är klar.
 
 ** 20170509 **
+
 #### Gjort:
-* Fått pintos att kompilera
-* Fixat så att test syscall fungerar helt
+
+* 20170509: Fått pintos att kompilera
+* 20180410: Redovisat Deadline 1
+* 20180424: Refaktoriserat syscall_handler och flyttat repot till GitLab
+
+## Contribute
+
+```sh
+git checkout develop
+git pull origin master
+# do your shit
+git commit -am 'shit done'
+git checkout master
+git merge develop
+git push origin master
+```
