@@ -22,14 +22,12 @@
 
 #include "devices/timer.h"
 
-static void syscall_handler (struct intr_frame *);
+static void syscall_handler(struct intr_frame *);
 
-void
-syscall_init (void)
+void syscall_init(void)
 {
-  intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
+  intr_register_int(0x30, 3, INTR_ON, syscall_handler, "syscall");
 }
-
 
 /* This array defined the number of arguments each syscall expects.
 For example, if you want to find out the number of arguments for
@@ -41,50 +39,60 @@ All system calls have a name such as SYS_READ defined as an enum
 type, see `lib/syscall-nr.h'. Use them instead of numbers.
 */
 const int argc[] = {
-  /* basic calls */
-  0, 1, 1, 1, 2, 1, 1, 1, 3, 3, 2, 1, 1,
-  /* not implemented */
-  2, 1,    1, 1, 2, 1, 1,
-  /* extended */
-  0
-};
-static int32_t sys_read_(int32_t FD, char * buf , const unsigned size){
+    /* basic calls */
+    0, 1, 1, 1, 2, 1, 1, 1, 3, 3, 2, 1, 1,
+    /* not implemented */
+    2, 1, 1, 1, 2, 1, 1,
+    /* extended */
+    0};
+static int32_t sys_read_(int32_t FD, char *buf, const unsigned size)
+{
   int32_t i = 0;
-  struct thread* tr = thread_current();
-  struct map* m = &tr->file_map;
-  if(map_find(m, (int)FD) != -1){ // Filen Öppnad
-    struct file* f = map_find(m, FD);
-    if(f != NULL) return (int32_t)file_read(f, buf, size);
-    else return -1;
-
-  }else{ // Filen inte Öppnad
+  struct thread *tr = thread_current();
+  struct map *m = &tr->file_map;
+  if (map_find(m, (int)FD) != -1)
+  { // Filen Öppnad
+    struct file *f = map_find(m, FD);
+    if (f != NULL)
+      return (int32_t)file_read(f, buf, size);
+    else
+      return -1;
+  }
+  else
+  { // Filen inte Öppnad
     return -1;
   }
 }
 
-static int32_t sys_write_(int32_t FD, char * buf , const unsigned size){
+static int32_t sys_write_(int32_t FD, char *buf, const unsigned size)
+{
   int32_t i = 0;
-  struct thread* tr = thread_current();
-  struct map* m = &tr->file_map;
-  if(map_find(m, (int)FD) != -1){ // Filen öppnad FD != STDIN_FILENO
-    struct file* f = map_find(m, FD);
-    if (f != NULL) return (int32_t)file_write(f, buf, size);
-    else return -1;
-
-  }else{ // Filen inte öppnad
+  struct thread *tr = thread_current();
+  struct map *m = &tr->file_map;
+  if (map_find(m, (int)FD) != -1)
+  { // Filen öppnad FD != STDIN_FILENO
+    struct file *f = map_find(m, FD);
+    if (f != NULL)
+      return (int32_t)file_write(f, buf, size);
+    else
+      return -1;
+  }
+  else
+  { // Filen inte öppnad
     return -1;
   }
-
   return (int32_t)i;
 }
 
-
-static int32_t sys_keyboard_read_(char * FD, char * buf , const unsigned size){
+static int32_t sys_keyboard_read_(char *FD, char *buf, const unsigned size)
+{
   unsigned i = 0;
   char c;
-  while(i<size){
+  while (i < size)
+  {
     c = (char)input_getc();
-    if(c == '\r'){
+    if (c == '\r')
+    {
       c = '\n';
     }
     *buf = c;
@@ -98,181 +106,202 @@ static int32_t sys_keyboard_read_(char * FD, char * buf , const unsigned size){
   *buf = '\0';
   return (int32_t)i;
 }
-static int32_t sys_open_file_(char* filepath){
-  struct thread* tr = thread_current();
-  struct map* m = &tr->file_map;
-  struct file * f = filesys_open(filepath);
-  if(f != NULL){
-    int32_t retval = map_insert(m,f);
+static int32_t sys_open_file_(char *filepath)
+{
+  struct thread *tr = thread_current();
+  struct map *m = &tr->file_map;
+  struct file *f = filesys_open(filepath);
+  if (f != NULL)
+  {
+    int32_t retval = map_insert(m, f);
     return retval; // -1 if map_insert fails
-  }else{
+  }
+  else
+  {
     return (int32_t)-1;
   }
 }
-static int32_t sys_console_write_(char * FD, char * buf , const unsigned size){
+static int32_t sys_console_write_(char *FD, char *buf, const unsigned size)
+{
   putbuf(buf, (size_t)size);
   return (int32_t)size;
 }
 
-
-void sys_seek_(int FD, unsigned pos){
-  struct thread* tr = thread_current();
-  struct map* m = &tr->file_map;
-  struct file* fil = map_find(m, FD);
-  if(fil != -1){
+void sys_seek_(int FD, unsigned pos)
+{
+  struct thread *tr = thread_current();
+  struct map *m = &tr->file_map;
+  struct file *fil = map_find(m, FD);
+  if (fil != -1)
+  {
     return file_seek(fil, (off_t)pos);
   }
-
 }
 
-unsigned sys_tell_(int FD){
-  struct thread* tr = thread_current();
-  struct map* m = &tr->file_map;
-  struct file* fil = map_find(m, FD);
+unsigned sys_tell_(int FD)
+{
+  struct thread *tr = thread_current();
+  struct map *m = &tr->file_map;
+  struct file *fil = map_find(m, FD);
   int i = 0;
-  if(fil != -1){
+  if (fil != -1)
+  {
     return file_tell(fil);
-  }else{
+  }
+  else
+  {
     return (unsigned)-1;
   }
 }
 
-unsigned sys_filesize_(int FD){
-  struct thread* tr = thread_current();
-  struct map* m = &tr->file_map;
-  struct file* fil = map_find(m, FD);
-  if(fil != -1){
+unsigned sys_filesize_(int FD)
+{
+  struct thread *tr = thread_current();
+  struct map *m = &tr->file_map;
+  struct file *fil = map_find(m, FD);
+  if (fil != -1)
+  {
     return file_length(fil);
-  }else{
+  }
+  else
+  {
     return (unsigned)-1;
   }
 }
 
 // NEW 31 aug 2017
-void sys_plist_ (void) {
-  // Snygg utskrift
+void sys_plist_(void)
+{
   process_print_list();
 }
 
-
 // TODO: Refactor syscall handler to be more readable!!
 static void
-syscall_handler (struct intr_frame *f)
+syscall_handler(struct intr_frame *f)
 {
-  int32_t* esp = (int32_t*)f->esp;
+  int32_t *esp = (int32_t *)f->esp;
 
-  switch ( *esp /* retrive syscall number */ )
+  switch (*esp /* retrive syscall number */)
   {
-    case SYS_HALT :
+  case SYS_HALT:
     power_off();
     break;
-    case SYS_EXIT:
+  case SYS_EXIT:
     // TODO: process_cleanup: http://www.ida.liu.se/~TDIU16/2017/lab/pdf/17sysexec.pdf
     printf("thread_exit()... %i\n", esp[1]);
     thread_exit();
     printf("thread_exit() done...\n");
     break;
 
-    case SYS_READ :
+  case SYS_READ:
     //läs fil
-    NULL;
     {
       int32_t FD = (int32_t)esp[1];
-      if(FD != STDOUT_FILENO){
-        if(FD == STDIN_FILENO){
+      if (FD != STDOUT_FILENO)
+      {
+        if (FD == STDIN_FILENO)
+        {
           //printf("STDIN");
           int32_t buffer = (int32_t)esp[2];
           int32_t len = (int32_t)esp[3];
           int32_t nr_bytes = sys_keyboard_read_((char *)FD, (char *)buffer, (unsigned)len);
           f->eax = nr_bytes;
-        }else{ // om fil
+        }
+        else
+        { // om fil
           int32_t buffer = (int32_t)esp[2];
           int32_t len = (int32_t)esp[3];
           int32_t nr_bytes = sys_read_(FD, (char *)buffer, (unsigned)len);
           f->eax = nr_bytes;
-
         }
-      }else{
+      }
+      else
+      {
         //return -1
         f->eax = -1;
         printf("NEEEEJ READ\n");
       }
       break;
     }
-    case SYS_WRITE :
+  case SYS_WRITE:
     //skriv ti
     NULL;
     {
       int32_t FD = (int32_t)esp[1];
-      if(FD != STDIN_FILENO){
-        if(FD == STDOUT_FILENO){
+      if (FD != STDIN_FILENO)
+      {
+        if (FD == STDOUT_FILENO)
+        {
           int32_t buffer = (int32_t)esp[2];
           int32_t len = (int32_t)esp[3];
           int32_t nr_bytes = sys_console_write_((char *)FD, (char *)buffer, (unsigned)len);
           f->eax = nr_bytes;
-        }else{ //Hantera fil istället
+        }
+        else
+        { //Hantera fil istället
           int32_t buffer = (int32_t)esp[2];
           int32_t len = (int32_t)esp[3];
           int32_t nr_bytes = sys_write_(FD, (char *)buffer, (unsigned)len);
           f->eax = nr_bytes;
         }
-      }else{
+      }
+      else
+      {
         //return -1
         f->eax = -1;
         printf("NEEEEJ WRITE\n");
-
       }
       break;
     }
-    case SYS_OPEN : //Open a file
+  case SYS_OPEN: //Open a file
     NULL;
     {
       int32_t intpath = (int32_t)esp[1];
-      int32_t retval = (int32_t)sys_open_file_((char*)intpath);
+      int32_t retval = (int32_t)sys_open_file_((char *)intpath);
       f->eax = retval;
       break;
     }
-    case SYS_CLOSE :
+  case SYS_CLOSE:
     NULL;
     {
       int32_t fd = (int32_t)esp[1];
       struct thread *t = thread_current();
       struct map *m = &t->file_map;
-      struct file * f = map_remove(m,fd);
+      struct file *f = map_remove(m, fd);
 
       break;
     }
-    case SYS_REMOVE :
+  case SYS_REMOVE:
     NULL;
     {
       int32_t intpath = (int32_t)esp[1];
-      f->eax = (int32_t)filesys_remove((char*)intpath);
+      f->eax = (int32_t)filesys_remove((char *)intpath);
       break;
     }
-    case SYS_CREATE :
+  case SYS_CREATE:
     NULL;
     {
       int32_t intpath = (int32_t)esp[1];
       int32_t size = (int32_t)esp[2];
-      f->eax = (int32_t)filesys_create ((char*)intpath, (off_t)size);
+      f->eax = (int32_t)filesys_create((char *)intpath, (off_t)size);
       break;
     }
-    case SYS_SEEK :
+  case SYS_SEEK:
     NULL;
     {
       int32_t FD = esp[1];
       int32_t pos = esp[2];
-      sys_seek_((int)FD, (unsigned) pos);
+      sys_seek_((int)FD, (unsigned)pos);
       break;
     }
-    case SYS_TELL :
+  case SYS_TELL:
     NULL;
     {
       int32_t FD = esp[1];
       f->eax = sys_tell_((int)FD);
       break;
     }
-    case SYS_FILESIZE :
+  case SYS_FILESIZE:
     NULL;
     {
       int32_t FD = esp[1];
@@ -280,7 +309,7 @@ syscall_handler (struct intr_frame *f)
 
       break;
     }
-    case SYS_EXEC :
+  case SYS_EXEC:
     NULL;
     {
 
@@ -291,10 +320,11 @@ syscall_handler (struct intr_frame *f)
       förälders process-id, samt eventuell extra data som en process behöver skicka tillbaka
       till sin förälderprocess eller tvärtom (jämför med vad du gjorde i uppgift 10). */
 
-      char* cml = (char*)esp[1]; // ESP index?
+      char *cml = (char *)esp[1]; // ESP index?
 
       // Check if esp[1] is valid pointer.
-      if (cml == NULL) {
+      if (cml == NULL)
+      {
         printf("SYS_EXEC: ESP1 fails");
         f->eax = -1;
         thread_exit();
@@ -304,28 +334,28 @@ syscall_handler (struct intr_frame *f)
       f->eax = id;
       break;
     }
-    case SYS_SLEEP :
+  case SYS_SLEEP:
     NULL;
     {
       int32_t time = esp[1];
       timer_msleep((int64_t)time);
       break;
     }
-    case SYS_PLIST :
+  case SYS_PLIST:
     NULL;
     {
       sys_plist_();
 
       break;
     }
-    default:
-    {
-      printf ("Executed an unknown system call!\n");
+  default:
+  {
+    printf("Executed an unknown system call!\n");
 
-      printf ("Stack top + 0: %d\n", esp[0]);
-      printf ("Stack top + 1: %d\n", esp[1]);
+    printf("Stack top + 0: %d\n", esp[0]);
+    printf("Stack top + 1: %d\n", esp[1]);
 
-      thread_exit ();
-    }
+    thread_exit();
+  }
   }
 }
