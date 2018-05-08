@@ -4,11 +4,12 @@
 #include "lib/stdbool.h"
 
 //#define value_t file*
-typedef struct file* value_t;
+typedef struct file *value_t;
 #define MAP_SIZE 16 // max 16 files in pintos
 #define key_t int
 
-struct map {
+struct map
+{
   value_t content[MAP_SIZE];
 };
 
@@ -23,16 +24,14 @@ struct map {
      and a process id INSERT this in a list of files. Return an
      integer that can be used to find the opened file later.
 */
-//typedef struct file* value_t;
 
+void map_init(struct map *m);
+key_t map_insert(struct map *m, value_t v);
+value_t map_find(struct map *m, key_t FD);
+value_t map_remove(struct map *m, key_t FD);
 
-void map_init(struct map* m);
-key_t map_insert(struct map* m, value_t v);
-value_t map_find(struct map* m, key_t FD);
-value_t map_remove(struct map* m, key_t FD);
-
-void map_for_each(struct map* m, void(*exec)(key_t k, value_t v, int aux), int aux);
-void map_remove_if(struct map* m, bool (*cond)(key_t k, value_t v, int aux), int aux);
+void map_for_each(struct map *m, void (*exec)(key_t k, value_t v, int aux), int aux);
+void map_remove_if(struct map *m, bool (*cond)(key_t k, value_t v, int aux), int aux);
 
 /*
    - A function that given an integer (obtained from above function)
