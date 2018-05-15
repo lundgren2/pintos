@@ -400,6 +400,7 @@ void process_cleanup(void)
 
   // remove if exists in filemap
   struct map *m = &cur->file_map;
+
   int mapFound = map_find(&m, cur->tid);
   if (mapFound != -1)
   {
