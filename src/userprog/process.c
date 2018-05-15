@@ -294,7 +294,6 @@ start_process(struct parameters_to_start_process *parameters)
        address, the first argument, the second argument etc. */
 
     // Skapa ny process och ge den värden
-
     struct Process plist;
     plist.process_id = thread_current()->tid;
     plist.process_name = thread_current()->name;
@@ -304,7 +303,7 @@ start_process(struct parameters_to_start_process *parameters)
     plist.process_alive = true;
     plist.parent_alive = true;
 
-    debug("==== STARTING PROCESS pid: %d\n", plist.process_id);
+    debug("==== ADDING NAME: %s\n", plist.process_name);
     parameters->init_ok = true;
 
     // Lägg till i processlistan

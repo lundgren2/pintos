@@ -3,15 +3,15 @@
 #define MAX_PROCESS 64
 #include "../threads/synch.h" // semaphore
 
-struct Process {
+struct Process
+{
   int process_id;
-  char* process_name;
+  char *process_name;
   int parent_id;
   int exit_status;
   bool free;
   bool process_alive;
   bool parent_alive;
-
 };
 static struct System_process_list
 {
@@ -19,13 +19,11 @@ static struct System_process_list
   struct lock l;
 };
 
-
-void process_list_init(struct System_process_list * SPL);
-int process_list_insert(struct System_process_list * SPL, struct Process p);
-struct Process * process_list_find(struct System_process_list * SPL, int id);
-struct Process * process_list_remove(struct System_process_list * SPL, int id);
-void  process_list_print(struct System_process_list * SPL);
-
+void process_list_init(struct System_process_list *SPL);
+int process_list_insert(struct System_process_list *SPL, struct Process p);
+struct Process *process_list_find(struct System_process_list *SPL, int id);
+struct Process *process_list_remove(struct System_process_list *SPL, int id);
+void process_list_print(struct System_process_list *SPL);
 
 /* Place functions to handle a running process here (process list).
 
@@ -53,6 +51,5 @@ void  process_list_print(struct System_process_list * SPL);
      clean, readable format.
 
  */
-
 
 #endif
