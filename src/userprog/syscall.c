@@ -268,6 +268,9 @@ static void syscall_handler(struct intr_frame *f)
   case SYS_PLIST:
     sys_plist_();
     break;
+  case SYS_WAIT:
+    f->eax = process_wait((int)FD);
+    break;
   default:
     printf("Executed an unknown system call!\n");
 

@@ -19,8 +19,8 @@ A: Nej, vi hade glömt att implementera process_cleanup i labben, lol.
 
 * Det verkar som att det är fel i stacken. Vi exekviverar två program åt gången i lab 17 longrun. Säkert något gammalt fel som spökar.
   Tips: Kolla rad 325,
-  // HACK if*.esp -= 12; /* Unacceptable solution. */
-  if*.esp = setup*main_stack(parameters->command_line, if*.esp);
+  // HACK if*.esp -= 12; /* Unacceptable solution. _/
+  if_.esp = setup*main_stack(parameters->command_line, if*.esp);
 
 ## Labbar:
 
@@ -30,3 +30,5 @@ v15: 10
 ## Tests
 
 pintos -v -k --fs-disk=2 --qemu -p ../examples/longrun_nowait -a nowait -p ../examples/generic_parent -a generic_parent -p ../examples/busy -a dummy -- -f -q run 'nowait 10 50'
+
+pintos -v -k --fs-disk=2 --qemu -p ../examples/longrun -a longrun -p ../examples/dummy -a dummy -- -f -q run 'longrun 10 50'

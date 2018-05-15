@@ -368,15 +368,28 @@ int process_wait(int child_id)
   debug("%s#%d: process_wait(%d) ENTERED\n",
         cur->name, cur->tid, child_id);
   /* Yes! You need to do something good here ! */
+
+  struct Process *tmp = process_list_find(&SPL, child_id);
+  // Check if child doesn't exist in process list. Already terminated
+  if (tmp == NULL)
+  {
+    return status;
+  }
+  // Check if parent matches calling process
+  if (tmp->parent_id != cur->pid)
+  {
+    return status;
+  }
+
+  // Need sync, return exitstatus if process doesn't have childs
+  status = tmp->exit_status;
+
+  process_list_remove(&SPL, child_id);
+
   debug("%s#%d: process_wait(%d) RETURNS %d\n",
         cur->name, cur->tid, child_id, status);
 
   return status;
-}
-
-bool process_alive(value_t v)
-{
-  // add logic to check if the process is alive and return true / false
 }
 
 /* Free the current process's resources. This function is called
