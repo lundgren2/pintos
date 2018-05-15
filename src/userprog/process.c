@@ -374,6 +374,11 @@ int process_wait(int child_id)
   return status;
 }
 
+bool process_alive(value_t v)
+{
+  // add logic to check if the process is alive and return true / false
+}
+
 /* Free the current process's resources. This function is called
    automatically from thread_exit() to make sure cleanup of any
    process resources is always done. That is correct behaviour. But
@@ -393,8 +398,14 @@ void process_cleanup(void)
 
   debug("%s#%d: process_cleanup() ENTERED\n", cur->name, cur->tid);
 
+<<<<<<< HEAD
   // remove if exists in filemap
   struct map *m = &cur->file_map;
+=======
+  struct map *m = &cur->file_map;
+  int32_t fd = &cur->stack[1];
+
+>>>>>>> 375860565cc2c06d27ab2d2e8c4fdb2ca942602f
   int mapFound = map_find(&m, cur->tid);
   if (mapFound != -1)
   {
@@ -420,13 +431,19 @@ void process_cleanup(void)
    * possibly before the printf is completed.)
    */
   printf("%s: exit(%d)\n", thread_name(), status);
+<<<<<<< HEAD
 
   // Remove process of the current thread
+=======
+>>>>>>> 375860565cc2c06d27ab2d2e8c4fdb2ca942602f
   if (tmp != NULL)
   {
     process_list_remove(&SPL, cur->tid);
   }
+<<<<<<< HEAD
 
+=======
+>>>>>>> 375860565cc2c06d27ab2d2e8c4fdb2ca942602f
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
   if (pd != NULL)

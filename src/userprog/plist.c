@@ -59,7 +59,11 @@ struct Process *process_list_remove(struct System_process_list *SPL, int id)
   lock_acquire(&SPL->l);
   if (!SPL->plist_[id].parent_alive == false)
   {
+<<<<<<< HEAD
     //free(SPL->plist_[id]);
+=======
+    free(SPL->plist_[id]);
+>>>>>>> 375860565cc2c06d27ab2d2e8c4fdb2ca942602f
     SPL->plist_[id].free = true;
   }
 
