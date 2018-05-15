@@ -152,8 +152,13 @@ void process_init(void)
  * instead. Note however that all cleanup after a process must be done
  * in process_cleanup, and that process_cleanup are already called
  * from thread_exit - do not call cleanup twice! */
-void process_exit(int status UNUSED)
+void process_exit(int status)
 {
+  struct Process *tmp = process_list_find(&SPL, thread_current()->pid);
+  printf("TMP TID ParentID: %d, %d\n", tmp->process_id, tmp->parent_id);
+  printf("Process_exit, status:  %d\n", status);
+  tmp->exit_status = status;
+  printf("TMP EXITSTATUS %i\n", tmp->exit_status);
 }
 
 /* Print a list of all running processes. The list shall include all
@@ -443,7 +448,8 @@ void process_cleanup(void)
   // Remove process of the current thread
   if (tmp != NULL)
   {
-    process_list_remove(&SPL, cur->tid);
+    printf("TAR BORT PROCESSEN UR MAPJÄVELN!: %i pid: %i, \n", cur->tid, cur->pid);
+    process_list_remove(&SPL, cur->pid);
   }
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
