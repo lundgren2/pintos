@@ -374,6 +374,11 @@ int process_wait(int child_id)
   return status;
 }
 
+bool process_alive(value_t v)
+{
+  // add logic to check if the process is alive and return true / false
+}
+
 /* Free the current process's resources. This function is called
    automatically from thread_exit() to make sure cleanup of any
    process resources is always done. That is correct behaviour. But
@@ -426,7 +431,6 @@ void process_cleanup(void)
   {
     process_list_remove(&SPL, cur->tid);
   }
-
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
   if (pd != NULL)
