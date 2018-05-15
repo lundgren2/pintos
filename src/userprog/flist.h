@@ -31,7 +31,7 @@ value_t map_find(struct map *m, key_t FD);
 value_t map_remove(struct map *m, key_t FD);
 
 void map_for_each(struct map *m, void (*exec)(key_t k, value_t v, int aux), int aux);
-void map_remove_if(struct map *m, bool (*cond)(key_t k, value_t v, int aux), int aux);
+void map_remove_if(struct map *m, value_t v, int aux);
 
 /*
    - A function that given an integer (obtained from above function)

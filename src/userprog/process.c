@@ -388,35 +388,32 @@ int process_wait(int child_id)
    or initialized to something sane, or else that any such situation
    is detected.
 */
-
 void process_cleanup(void)
 {
   struct thread *cur = thread_current();
   uint32_t *pd = cur->pagedir;
   int status = -1;
 
-  // Fix for deadline 1: 2018-04-10
-  struct map *m = &cur->file_map;
-  int32_t fd = &cur->stack[1];
-  for (int i = 0; i < MAP_SIZE; i++)
-  {
-    file_close(&m->content[i]);
-  }
-  map_remove(&m, fd);
   debug("%s#%d: process_cleanup() ENTERED\n", cur->name, cur->tid);
 
+  // remove if exists in filemap
+  struct map *m = &cur->file_map;
+  int mapFound = map_find(&m, cur->tid);
+  if (mapFound != -1)
+  {
+    map_remove_if(m, mapFound, 0);
+  }
+
+  // Set exit status
   struct Process *tmp = process_list_find(&SPL, cur->tid); // check if cur->tid exists in process list
   if (tmp != NULL)
   {
     if (tmp->process_id != cur->tid)
     {
-      debug("# i (process.c) process_cleanup() tmp->process_id != cur->tid \n");
+      debug("# tmp->process_id != cur->tid: i (process.c) process_cleanup() tmp->process_id != cur->tid \n");
     }
     status = tmp->exit_status;
-    process_list_remove(&SPL, cur->tid);
   }
-
-  debug("%s#%d: process_cleanup() ENTERED\n", cur->name, cur->tid);
 
   /* Later tests DEPEND on this output to work correct. You will have
    * to find the actual exit status in your process list. It is
@@ -426,6 +423,12 @@ void process_cleanup(void)
    * possibly before the printf is completed.)
    */
   printf("%s: exit(%d)\n", thread_name(), status);
+
+  // Remove process of the current thread
+  if (tmp != NULL)
+  {
+    process_list_remove(&SPL, cur->tid);
+  }
 
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */

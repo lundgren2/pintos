@@ -4,27 +4,33 @@
 #include "../threads/synch.h"
 #include <stdio.h>
 
-void process_list_init(struct System_process_list * SPL){
-  if(SPL == NULL)
+void process_list_init(struct System_process_list *SPL)
+{
+  if (SPL == NULL)
     return -1;
-  lock_init (&SPL->l);
+  lock_init(&SPL->l);
   {
     int i = 0;
-    for(; i<MAX_PROCESS; ++i){
+    for (; i < MAX_PROCESS; ++i)
+    {
       SPL->plist_[i].free = true;
     }
   }
 }
 
-int process_list_insert(struct System_process_list * SPL, struct Process p){
-  if(SPL == NULL){
+int process_list_insert(struct System_process_list *SPL, struct Process p)
+{
+  if (SPL == NULL)
+  {
     return -1;
   }
   lock_acquire(&SPL->l);
   {
     int i;
-    for(;i< MAX_PROCESS; ++i){
-      if(SPL->plist_[i].free == true){
+    for (; i < MAX_PROCESS; ++i)
+    {
+      if (SPL->plist_[i].free == true)
+      {
         SPL->plist_[i] = p;
         lock_release(&SPL->l);
         return i;
@@ -35,21 +41,35 @@ int process_list_insert(struct System_process_list * SPL, struct Process p){
   return -1;
 }
 
-struct Process * process_list_find(struct System_process_list * SPL, int id){
+struct Process *process_list_find(struct System_process_list *SPL, int id)
+{
+  if (SPL == NULL)
+  {
+    return NULL;
+  }
   return &SPL->plist_[id];
 }
 
-struct Process * process_list_remove(struct System_process_list * SPL, int id){
-  if(SPL == NULL){
+struct Process *process_list_remove(struct System_process_list *SPL, int id)
+{
+  if (SPL == NULL)
+  {
     return NULL;
   }
   lock_acquire(&SPL->l);
-  if(!SPL->plist_[id].parent_alive == false)
+  if (!SPL->plist_[id].parent_alive == false)
+  {
+    free(SPL->plist_[id]);
     SPL->plist_[id].free = true;
+  }
+
   lock_release(&SPL->l);
 }
-void  process_list_print(struct System_process_list * SPL){
-  if(SPL == NULL){
+
+void process_list_print(struct System_process_list *SPL)
+{
+  if (SPL == NULL)
+  {
     return NULL;
   }
   lock_acquire(&SPL->l);
@@ -57,8 +77,10 @@ void  process_list_print(struct System_process_list * SPL){
   printf("ID\t PARENT ID\t NAME\t\t EXIT_STATUS\n");
 
   int i = 0;
-  for (;i<MAX_PROCESS; i++) {
-    if (SPL->plist_[i].process_id == 0) {
+  for (; i < MAX_PROCESS; i++)
+  {
+    if (SPL->plist_[i].process_id == 0)
+    {
       break;
     }
     printf("%i\t %i\t\t %s\t\t %i \n",
@@ -67,7 +89,7 @@ void  process_list_print(struct System_process_list * SPL){
            SPL->plist_[i].process_name,
            SPL->plist_[i].exit_status);
   }
-  
+
   printf("\n");
   lock_release(&SPL->l);
 }
