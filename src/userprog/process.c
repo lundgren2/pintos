@@ -232,7 +232,7 @@ int process_execute(const char *command_line)
   // Vi får inte vi släppa command_line innan alla child är döda ??
   if (process_id != -1)
   {
-    sema_down(&arguments.sema);
+    //sema_down(&arguments.sema);
   }
 
   /* WHICH thread may still be using this right now? */
@@ -338,7 +338,7 @@ start_process(struct parameters_to_start_process *parameters)
   */
   if (!success)
   {
-    // sema_up(&parameters->sema); // new 1/2-18
+    sema_up(&parameters->sema); // new 1/2-18
     thread_exit();
   }
 
