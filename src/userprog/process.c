@@ -217,7 +217,7 @@ int process_execute(const char *command_line)
 
   if (arguments.init_ok == false)
   {
-    debug("====== INIT_OK FALSE\n");
+    debug("# ====== INIT_OK FALSE\n");
     process_id = -1;
   }
   else
@@ -244,7 +244,7 @@ int process_execute(const char *command_line)
         command_line, process_id);
 
   /* MUST be -1 if `load' in `start_process' return false */
-  debug("Process_id in process_execute(): %d", process_id);
+  debug("# Process_id in process_execute(): %d", process_id);
   return process_id;
 }
 
@@ -271,9 +271,7 @@ start_process(struct parameters_to_start_process *parameters)
   if_.gs = if_.fs = if_.es = if_.ds = if_.ss = SEL_UDSEG;
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
-  // c
 
-  debug("PARAMETERS TO LOAD: %s, %d, %d", file_name, &if_.eip, &if_.esp);
   success = load(file_name, &if_.eip, &if_.esp);
 
   debug("%s#%d: start_process(...): load returned %d\n",
@@ -303,13 +301,13 @@ start_process(struct parameters_to_start_process *parameters)
     plist.process_alive = true;
     plist.parent_alive = true;
 
-    debug("==== ADDING NAME: %s\n", plist.process_name);
+    debug("# ==== ADDING NAME: %s\n", plist.process_name);
     parameters->init_ok = true;
 
     // Lägg till i processlistan
     process_list_insert(&SPL, plist);
 
-    debug("==== PROCESS pid: %d Added to Process List\n", plist.process_id);
+    debug("# ==== PROCESS pid: %d Added to Process List\n", plist.process_id);
     // TODO: remove print here / TL
     process_list_print(&SPL);
 
