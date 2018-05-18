@@ -296,23 +296,24 @@ start_process(struct parameters_to_start_process *parameters)
        C-function expects the stack to contain, in order, the return
        address, the first argument, the second argument etc. */
 
+    // CHECKLIST: https: //www.ida.liu.se/~TDIU16/2017/lab/pdf/17sysexec.pdf
     // Skapa ny process och ge den värden
-    struct Process plist;
-    plist.process_id = thread_current()->tid;
-    plist.process_name = thread_current()->name;
-    plist.parent_id = parameters->pid;
-    plist.exit_status = -1;
-    plist.free = false;
-    plist.process_alive = true;
-    plist.parent_alive = true;
+    struct Process process;
+    process.process_id = thread_current()->tid; // 1 + 3
+    process.process_name = thread_current()->name;
+    process.parent_id = parameters->pid; // 2
+    process.exit_status = -1;
+    process.free = false;
+    process.process_alive = true;
+    process.parent_alive = true;
 
-    debug("# ==== ADDING NAME: %s\n", plist.process_name);
+    debug("# ==== ADDING NAME: %s\n", process.process_name);
     parameters->init_ok = true;
 
     // Lägg till i processlistan
-    process_list_insert(&SPL, plist);
+    process_list_insert(&SPL, process);
 
-    debug("# ==== PROCESS pid: %d Added to Process List\n", plist.process_id);
+    debug("# ==== PROCESS pid: %d Added to Process List\n", process.process_id);
     // TODO: remove print here / TL
     process_list_print(&SPL);
 
@@ -433,6 +434,7 @@ void process_cleanup(void)
     {
       debug("# tmp->process_id != cur->tid: i (process.c) process_cleanup() tmp->process_id != cur->tid \n");
     }
+    printf("# TID in EXIT STATUS: %d", cur->tid);
     status = tmp->exit_status;
   }
 

@@ -25,18 +25,17 @@ int process_list_insert(struct System_process_list *SPL, struct Process p)
     return -1;
   }
   lock_acquire(&SPL->l);
+
+  for (int i = 0; i < MAX_PROCESS; ++i)
   {
-    int i;
-    for (; i < MAX_PROCESS; ++i)
+    if (SPL->plist_[i].free)
     {
-      if (SPL->plist_[i].free == true)
-      {
-        SPL->plist_[i] = p;
-        lock_release(&SPL->l);
-        return i;
-      }
+      SPL->plist_[i] = p;
+      lock_release(&SPL->l);
+      return i;
     }
   }
+
   lock_release(&SPL->l);
   return -1;
 }
@@ -50,20 +49,21 @@ struct Process *process_list_find(struct System_process_list *SPL, int id)
   return &SPL->plist_[id];
 }
 
-struct Process *process_list_remove(struct System_process_list *SPL, int id)
+bool process_list_remove(struct System_process_list *SPL, int id)
 {
   if (SPL == NULL)
   {
-    return NULL;
+    return false;
   }
   lock_acquire(&SPL->l);
-  if (!SPL->plist_[id].parent_alive == false)
+  // Check soif parent is dead
+  if (!SPL->plist_[id].parent_alive)
   {
 
     SPL->plist_[id].free = true;
   }
-
   lock_release(&SPL->l);
+  return true;
 }
 
 void process_list_print(struct System_process_list *SPL)
