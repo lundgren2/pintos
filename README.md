@@ -1,17 +1,17 @@
 # TDIU16 - Pintos
 
-#### Att göra:
+#### ToDo:
 
-* 170509 - Fixa test för create file test.
-* Kolla om userprog/process.c är klar.
+* - [x] 170509: Fixa test för create file test.
+* - [ ] 180518: Kontrollera varför inte test longrun_nowait fungerar med för många childs. (ca 10 50)
 
-** 20170509 **
 
-#### Gjort:
+#### Changelog:
 
-* 20170509: Fått pintos att kompilera
-* 20180410: Redovisat Deadline 1
-* 20180424: Refaktoriserat syscall_handler och flyttat repot till GitLab
+* 170509: Fått pintos att kompilera
+* 180410: Redovisat Deadline 1
+* 180424: Refaktoriserat syscall_handler och flyttat repot till GitLab
+* 180518: Fixat plist.c så att insert och remove fungerar => exit-staus fungerar.
 
 ## Contribute
 
