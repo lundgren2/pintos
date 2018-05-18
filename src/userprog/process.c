@@ -154,17 +154,10 @@ void process_init(void)
  * from thread_exit - do not call cleanup twice! */
 void process_exit(int status)
 {
-  printf("PROC EXIT: THread_cur->Pid: %d \n", thread_current()->tid);
   struct Process *tmp = process_list_find(&SPL, thread_current()->tid);
   if (tmp != NULL)
   {
-    printf("TMP TID ParentID: %d, %d\n", tmp->process_id, tmp->parent_id);
     tmp->exit_status = status;
-    printf("TMP EXITSTATUS %i\n", tmp->exit_status);
-  }
-  else
-  {
-    printf("# process_exit: TMP == NULL!");
   }
 }
 
@@ -201,7 +194,8 @@ int process_execute(const char *command_line)
 
   /* LOCAL variable will cease existence when function return! */
   struct parameters_to_start_process arguments;
-  // Nu behöver vi initera semaphoren
+
+  // Semafor to control start process
   sema_init(&arguments.sema, 0);
 
   debug("%s#%d: process_execute(\"%s\") ENTERED\n",
@@ -230,7 +224,7 @@ int process_execute(const char *command_line)
 
   if (arguments.init_ok == false)
   {
-    debug("# ====== INIT_OK FALSE\n");
+    debug("# ====== INIT_OK FALSE ======\n");
     process_id = -1;
   }
   else
@@ -301,24 +295,22 @@ start_process(struct parameters_to_start_process *parameters)
        C-function expects the stack to contain, in order, the return
        address, the first argument, the second argument etc. */
 
-    // CHECKLIST: https: //www.ida.liu.se/~TDIU16/2017/lab/pdf/17sysexec.pdf
     // Skapa ny process och ge den värden
     struct Process process;
-    process.process_id = thread_current()->tid; // 1 + 3
+    process.process_id = thread_current()->tid;
     process.process_name = thread_current()->name;
-    process.parent_id = parameters->pid; // 2
+    process.parent_id = parameters->pid;
     process.exit_status = -1;
     process.free = false;
     process.process_alive = true;
     process.parent_alive = true;
 
-    debug("# ==== ADDING NAME: %s\n", process.process_name);
     parameters->init_ok = true;
 
     // Lägg till i processlistan
     process_list_insert(&SPL, process);
 
-    debug("# ==== PROCESS pid: %d Added to Process List\n", process.process_id);
+    debug("# ==== PROCESS %s pid: %d Added to process List\n", process.process_name, process.process_id);
 
     // HACK if_.esp -= 12; /* Unacceptable solution. */
     if_.esp = setup_main_stack(parameters->command_line, if_.esp);
@@ -344,7 +336,6 @@ start_process(struct parameters_to_start_process *parameters)
   */
   if (!success)
   {
-    sema_up(&parameters->sema); // new 1/2-18
     thread_exit();
   }
 
@@ -429,15 +420,10 @@ void process_cleanup(void)
     map_remove_if(m, mapFound, 0);
   }
 
-  // Set exit status
+  // Set exit status for the process
   struct Process *tmp = process_list_find(&SPL, cur->tid); // check if cur->tid exists in process list
   if (tmp != NULL)
   {
-    if (tmp->process_id != cur->tid)
-    {
-      debug("# tmp->process_id != cur->tid: i (process.c) process_cleanup() tmp->process_id != cur->tid \n");
-    }
-
     printf("# TID in EXIT STATUS: %d, pid: %d\n", cur->tid, tmp->process_id);
     status = tmp->exit_status;
   }
@@ -454,8 +440,8 @@ void process_cleanup(void)
   // Remove process of the current thread
   if (tmp != NULL)
   {
-    printf("TAR BORT PROCESSEN UR MAPJÄVELN!: %i pid: %i, \n", cur->tid, cur->pid);
-    process_list_remove(&SPL, cur->pid);
+    printf("# Remove process from SPL: %i pid: %i, \n", cur->tid, cur->pid);
+    process_list_remove(&SPL, cur->tid);
   }
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */

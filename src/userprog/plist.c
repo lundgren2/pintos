@@ -62,14 +62,17 @@ bool process_list_remove(struct System_process_list *SPL, int id)
   {
     return false;
   }
-  lock_acquire(&SPL->l);
-  // Check soif parent is dead
-  if (!SPL->plist_[id].parent_alive)
+  for (int i = 0; i < MAX_PROCESS; i++)
   {
-    SPL->plist_[id].free = true;
+    if (SPL->plist_[i].process_id == id)
+    {
+      lock_acquire(&SPL->l);
+      SPL->plist_[id].free = true;
+      lock_release(&SPL->l);
+      return true;
+    }
   }
-  lock_release(&SPL->l);
-  return true;
+  return false;
 }
 
 void process_list_print(struct System_process_list *SPL)
