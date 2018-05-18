@@ -46,7 +46,14 @@ struct Process *process_list_find(struct System_process_list *SPL, int id)
   {
     return NULL;
   }
-  return &SPL->plist_[id];
+  for (int i = 0; i < MAX_PROCESS; i++)
+  {
+    if (SPL->plist_[i].process_id == id)
+    {
+      return &SPL->plist_[i];
+    }
+  }
+  return NULL;
 }
 
 bool process_list_remove(struct System_process_list *SPL, int id)
@@ -59,7 +66,6 @@ bool process_list_remove(struct System_process_list *SPL, int id)
   // Check soif parent is dead
   if (!SPL->plist_[id].parent_alive)
   {
-
     SPL->plist_[id].free = true;
   }
   lock_release(&SPL->l);
@@ -74,7 +80,7 @@ void process_list_print(struct System_process_list *SPL)
   }
   lock_acquire(&SPL->l);
   printf("\n\t\t==== PROCESS LIST ====\n");
-  printf("ID\t PARENT ID\t NAME\t\t EXIT_STATUS\n");
+  printf("ID\t PARENT ID\t INDEX\t\t EXIT_STATUS\n");
 
   int i = 0;
   for (; i < MAX_PROCESS; i++)
@@ -86,7 +92,7 @@ void process_list_print(struct System_process_list *SPL)
     printf("%i\t %i\t\t %i\t\t %i \n",
            SPL->plist_[i].process_id,
            SPL->plist_[i].parent_id,
-           SPL->plist_[i].process_id,
+           i,
            SPL->plist_[i].exit_status);
   }
 

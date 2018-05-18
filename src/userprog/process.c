@@ -154,11 +154,18 @@ void process_init(void)
  * from thread_exit - do not call cleanup twice! */
 void process_exit(int status)
 {
-  struct Process *tmp = process_list_find(&SPL, thread_current()->pid);
-  printf("TMP TID ParentID: %d, %d\n", tmp->process_id, tmp->parent_id);
-  printf("Process_exit, status:  %d\n", status);
-  tmp->exit_status = status;
-  printf("TMP EXITSTATUS %i\n", tmp->exit_status);
+  printf("PROC EXIT: THread_cur->Pid: %d \n", thread_current()->tid);
+  struct Process *tmp = process_list_find(&SPL, thread_current()->tid);
+  if (tmp != NULL)
+  {
+    printf("TMP TID ParentID: %d, %d\n", tmp->process_id, tmp->parent_id);
+    tmp->exit_status = status;
+    printf("TMP EXITSTATUS %i\n", tmp->exit_status);
+  }
+  else
+  {
+    printf("# process_exit: TMP == NULL!");
+  }
 }
 
 /* Print a list of all running processes. The list shall include all
@@ -215,6 +222,7 @@ int process_execute(const char *command_line)
   thread_id = thread_create(debug_name, PRI_DEFAULT,
                             (thread_func *)start_process, &arguments);
 
+  // Process started successfully
   if (thread_id != -1)
   {
     sema_down(&arguments.sema);
@@ -234,13 +242,9 @@ int process_execute(const char *command_line)
   // Om vi tar bort denna så kommer vi få massa konstiga tecken i parameters->command_line när vi freear nedan.
   // power_off();
 
-  // Vi får inte vi släppa command_line innan alla child är döda ??
-  if (process_id != -1)
-  {
-    //sema_down(&arguments.sema);
-  }
-
   /* WHICH thread may still be using this right now? */
+  // avoid to free command_line before all childs are dead
+
   free(arguments.command_line);
 
   debug("%s#%d: process_execute(\"%s\") RETURNS %d\n",
@@ -249,7 +253,8 @@ int process_execute(const char *command_line)
         command_line, process_id);
 
   /* MUST be -1 if `load' in `start_process' return false */
-  debug("# Process_id in process_execute(): %d", process_id);
+  debug("# Process_id in process_execute(): %d\n", process_id);
+  process_list_print(&SPL);
   return process_id;
 }
 
@@ -314,8 +319,6 @@ start_process(struct parameters_to_start_process *parameters)
     process_list_insert(&SPL, process);
 
     debug("# ==== PROCESS pid: %d Added to Process List\n", process.process_id);
-    // TODO: remove print here / TL
-    process_list_print(&SPL);
 
     // HACK if_.esp -= 12; /* Unacceptable solution. */
     if_.esp = setup_main_stack(parameters->command_line, if_.esp);
@@ -434,7 +437,8 @@ void process_cleanup(void)
     {
       debug("# tmp->process_id != cur->tid: i (process.c) process_cleanup() tmp->process_id != cur->tid \n");
     }
-    printf("# TID in EXIT STATUS: %d", cur->tid);
+
+    printf("# TID in EXIT STATUS: %d, pid: %d\n", cur->tid, tmp->process_id);
     status = tmp->exit_status;
   }
 
