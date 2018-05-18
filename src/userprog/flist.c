@@ -1,3 +1,4 @@
+#include <debug.h>
 #include <stddef.h>
 #include "flist.h"
 
@@ -46,6 +47,7 @@ void map_remove_if(struct map *m, value_t v, int aux)
   bool cond = true;
   if (v == NULL)
   {
+    debug("# v is null\n");
     cond = false;
   }
 
@@ -53,7 +55,7 @@ void map_remove_if(struct map *m, value_t v, int aux)
   {
     if (m->content[key] != NULL)
     {
-      printf("map_remove_if map[%d]: %d", key, v);
+      debug("map_remove_if map[%d]: %d", key, v);
       if (cond)
       {
         map_remove(m, key);
@@ -70,7 +72,7 @@ void map_for_each(struct map *m,
   {
     if (m->content[key] != NULL)
     {
-      printf("for_each map[%d]: %d", key, m->content[key]);
+      debug("for_each map[%d]: %d", key, m->content[key]);
       exec(key, m->content[key], aux);
     }
   }

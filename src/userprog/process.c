@@ -224,7 +224,7 @@ int process_execute(const char *command_line)
 
   if (arguments.init_ok == false)
   {
-    debug("# ====== INIT_OK FALSE ======\n");
+    debug("====== INIT_OK FALSE ======\n");
     process_id = -1;
   }
   else
@@ -247,7 +247,7 @@ int process_execute(const char *command_line)
         command_line, process_id);
 
   /* MUST be -1 if `load' in `start_process' return false */
-  debug("# Process_id in process_execute(): %d\n", process_id);
+  debug("Process_id in process_execute(): %d\n", process_id);
   process_list_print(&SPL);
   return process_id;
 }
@@ -307,10 +307,10 @@ start_process(struct parameters_to_start_process *parameters)
 
     parameters->init_ok = true;
 
-    // Lägg till i processlistan
+    // LOOKUP: how to check if the SPL is full
     process_list_insert(&SPL, process);
 
-    debug("# ==== PROCESS %s pid: %d Added to process List\n", process.process_name, process.process_id);
+    debug("==== PROCESS %s pid: %d Added to process List\n", process.process_name, process.process_id);
 
     // HACK if_.esp -= 12; /* Unacceptable solution. */
     if_.esp = setup_main_stack(parameters->command_line, if_.esp);
