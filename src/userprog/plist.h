@@ -6,7 +6,7 @@
 struct Process
 {
   int process_id;
-  char *process_name;
+  char process_name[64];
   int parent_id;
   int exit_status;
   bool free;

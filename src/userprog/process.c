@@ -211,7 +211,7 @@ int process_execute(const char *command_line)
   arguments.pid = thread_current()->tid;
 
   strlcpy_first_word(debug_name, command_line, 64);
-
+  printf("COMMAND LINE: %s \n", command_line);
   /* SCHEDULES function `start_process' to run (LATER) */
   thread_id = thread_create(debug_name, PRI_DEFAULT,
                             (thread_func *)start_process, &arguments);
@@ -248,7 +248,7 @@ int process_execute(const char *command_line)
 
   /* MUST be -1 if `load' in `start_process' return false */
   debug("Process_id in process_execute(): %d\n", process_id);
-  process_list_print(&SPL);
+  process_print_list();
   return process_id;
 }
 
@@ -298,7 +298,7 @@ start_process(struct parameters_to_start_process *parameters)
     // Skapa ny process och ge den värden
     struct Process process;
     process.process_id = thread_current()->tid;
-    process.process_name = thread_current()->name;
+    strlcpy(process.process_name, thread_current()->name, 64);
     process.parent_id = parameters->pid;
     process.exit_status = -1;
     process.free = false;
@@ -311,8 +311,12 @@ start_process(struct parameters_to_start_process *parameters)
     process_list_insert(&SPL, process);
 
     debug("==== PROCESS %s pid: %d Added to process List\n", process.process_name, process.process_id);
-
+    debug("%s#%d: COMMANDLINE CHECK: (\"%s\") DONE\n",
+          thread_current()->name,
+          thread_current()->tid,
+          parameters->command_line);
     // HACK if_.esp -= 12; /* Unacceptable solution. */
+    // TODO: Fix command_line after setup_main_stack
     if_.esp = setup_main_stack(parameters->command_line, if_.esp);
 
     /* The stack and stack pointer should be setup correct just before
@@ -321,12 +325,13 @@ start_process(struct parameters_to_start_process *parameters)
 
     // dump_stack ( PHYS_BASE + 15, PHYS_BASE - if_.esp + 16 );
   }
-  sema_up(&parameters->sema);
 
   debug("%s#%d: start_process(\"%s\") DONE\n",
         thread_current()->name,
         thread_current()->tid,
         parameters->command_line);
+
+  sema_up(&parameters->sema);
 
   /* If load fail, quit. Load may fail for several reasons.
      Some simple examples:

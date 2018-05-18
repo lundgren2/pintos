@@ -4,7 +4,8 @@
 
 * - [x] 170509: Fixa test för create file test.
 * - [ ] 180518: Kontrollera varför inte test longrun_nowait fungerar med för många childs. (ca 10 50)
-
+* - [x] 180518: Fixa varför comman_line i arguments i start_process fuckar - Felet var en semafor som låg innan utskriften.
+`
 
 #### Changelog:
 
