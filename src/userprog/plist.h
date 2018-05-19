@@ -12,6 +12,8 @@ struct Process
   bool free;
   bool process_alive;
   bool parent_alive;
+  // new 2018-05-19
+  struct semaphore sema;
 };
 static struct System_process_list
 {

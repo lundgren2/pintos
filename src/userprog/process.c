@@ -248,7 +248,7 @@ int process_execute(const char *command_line)
 
   /* MUST be -1 if `load' in `start_process' return false */
   debug("Process_id in process_execute(): %d\n", process_id);
-  process_print_list();
+  //process_print_list();
   return process_id;
 }
 
@@ -304,17 +304,16 @@ start_process(struct parameters_to_start_process *parameters)
     process.free = false;
     process.process_alive = true;
     process.parent_alive = true;
+    sema_init(&process.sema, 0);
 
     parameters->init_ok = true;
 
     // LOOKUP: how to check if the SPL is full
     process_list_insert(&SPL, process);
+    process_print_list();
 
     debug("==== PROCESS %s pid: %d Added to process List\n", process.process_name, process.process_id);
-    debug("%s#%d: COMMANDLINE CHECK: (\"%s\") DONE\n",
-          thread_current()->name,
-          thread_current()->tid,
-          parameters->command_line);
+
     // HACK if_.esp -= 12; /* Unacceptable solution. */
     // TODO: Fix command_line after setup_main_stack
     if_.esp = setup_main_stack(parameters->command_line, if_.esp);
@@ -376,20 +375,24 @@ int process_wait(int child_id)
 
   struct Process *tmp = process_list_find(&SPL, child_id);
   // Check if child doesn't exist in process list. Already terminated
-  if (tmp == NULL)
+  if (tmp == NULL || tmp->free == true)
   {
     return status;
   }
+
   // Check if parent matches calling process
-  if (tmp->parent_id != cur->pid)
+  // if (tmp->parent_id != cur->pid)
+  // {
+  //   return status;
+  // }
+
+  // Check if
+  if (tmp->process_alive && tmp->parent_id != cur->pid)
   {
-    return status;
+    // Wait for process child_id to die
+    sema_down(&tmp->sema);
+    status = tmp->exit_status;
   }
-
-  // Need sync, return exitstatus if process doesn't have childs
-  status = tmp->exit_status;
-
-  process_list_remove(&SPL, child_id);
 
   debug("%s#%d: process_wait(%d) RETURNS %d\n",
         cur->name, cur->tid, child_id, status);
@@ -445,8 +448,12 @@ void process_cleanup(void)
   // Remove process of the current thread
   if (tmp != NULL)
   {
-    printf("# Remove process from SPL: %i pid: %i, \n", cur->tid, cur->pid);
-    process_list_remove(&SPL, cur->tid);
+    if (!tmp->free)
+    {
+      printf("# Remove process from SPL: %i pid: %i, \n", cur->tid, cur->pid);
+      sema_up(&tmp->sema);
+      process_list_remove(&SPL, cur->tid);
+    }
   }
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */

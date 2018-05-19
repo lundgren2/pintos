@@ -67,7 +67,8 @@ bool process_list_remove(struct System_process_list *SPL, int id)
     if (SPL->plist_[i].process_id == id)
     {
       lock_acquire(&SPL->l);
-      SPL->plist_[id].free = true;
+      SPL->plist_[i].free = true;
+      SPL->plist_[i].process_alive = false;
       lock_release(&SPL->l);
       return true;
     }
