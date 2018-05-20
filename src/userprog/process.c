@@ -211,7 +211,6 @@ int process_execute(const char *command_line)
   arguments.pid = thread_current()->tid;
 
   strlcpy_first_word(debug_name, command_line, 64);
-  printf("COMMAND LINE: %s \n", command_line);
   /* SCHEDULES function `start_process' to run (LATER) */
   thread_id = thread_create(debug_name, PRI_DEFAULT,
                             (thread_func *)start_process, &arguments);
@@ -247,8 +246,6 @@ int process_execute(const char *command_line)
         command_line, process_id);
 
   /* MUST be -1 if `load' in `start_process' return false */
-  debug("Process_id in process_execute(): %d\n", process_id);
-  //process_print_list();
   return process_id;
 }
 
@@ -296,14 +293,15 @@ start_process(struct parameters_to_start_process *parameters)
        address, the first argument, the second argument etc. */
 
     // Skapa ny process och ge den värden
-    struct Process* process = malloc(sizeof(struct Process));
+    struct Process *process = malloc(sizeof(struct Process));
     int i = thread_current()->tid;
     process->process_id = i;
     strlcpy(process->process_name, thread_current()->name, 64);
     process->parent_id = parameters->pid;
+    thread_current()->pid = parameters->pid;
     process->exit_status = -1;
-    process->free = false; // kan ta bort
     process->process_alive = true;
+    process->parent_alive = true;
     sema_init(&process->sema, 0);
     parameters->init_ok = true;
 
@@ -329,7 +327,7 @@ start_process(struct parameters_to_start_process *parameters)
         thread_current()->tid,
         parameters->command_line);
 
-  sema_up(&(parameters->sema));
+  sema_up(&parameters->sema);
 
   /* If load fail, quit. Load may fail for several reasons.
      Some simple examples:
@@ -379,18 +377,19 @@ int process_wait(int child_id)
     return status;
   }
 
-  debug("TMP->PARENT_ID: %i CUR PID: %i, CUR->TID: %i\n", tmp->parent_id, cur->pid, cur->tid);
-  // Check if process alive and if parent
-  if (!tmp->free || tmp->parent_id != cur->tid)
+  // KANSKE ta bort
+  if (tmp->parent_id != cur->tid)
   {
     return status;
   }
-  else
+  debug("TMP->PARENT_ID: %i CUR PID: %i, CUR->TID: %i\n", tmp->parent_id, cur->pid, cur->tid);
+  // Check if process alive and if parent
+  if (tmp->process_alive && tmp->parent_id == cur->tid)
   {
     // Wait for process child_id to die
-    debug("sema_down(&tmp->sema)\n");
     sema_down(&tmp->sema);
     status = tmp->exit_status;
+    tmp->process_alive = false;
   }
 
   debug("%s#%d: process_wait(%d) RETURNS %d\n",
@@ -429,11 +428,14 @@ void process_cleanup(void)
 
   // Set exit status for the process
   struct Process *tmp = process_list_find(&SPL, cur->tid);
-  // check if cur->tid exists in process list
   if (tmp != NULL)
   {
-    printf("# TID in EXIT STATUS: %d, pid: %d\n", cur->tid, tmp->process_id);
-    status = tmp->exit_status;
+
+    // TODO: Kolla upp if-satsen
+    if (tmp->process_alive)
+    {
+      status = tmp->exit_status;
+    }
   }
 
   /* Later tests DEPEND on this output to work correct. You will have
@@ -445,16 +447,26 @@ void process_cleanup(void)
    */
   printf("%s: exit(%d)\n", thread_name(), status);
 
-  // Remove process of the current thread
   if (tmp != NULL)
   {
-   
-    printf("# Remove process from SPL: %i pid: %i, \n", cur->tid, cur->pid);
-    debug("sema_up(&tmp->sema)\n");
-    //sema_up(&tmp->sema);
-    process_list_remove(&SPL, cur->tid);
-    
+    struct Process *tmpParent = process_list_find(&SPL, tmp->parent_id);
+
+    // TODO: kolla att den används
+    if (tmpParent != NULL && tmpParent->process_alive)
+    {
+      process_list_remove(&SPL, tmpParent->process_id);
+    }
+
+    // Remove process of the current thread
+    debug("sema_up(&tmp->sema) process_id: %i\n ", tmp->process_id);
+    sema_up(&tmp->sema);
+    if (tmp->process_id == cur->tid && !tmp->process_alive)
+    {
+      int tmpID = tmp->process_id;
+      process_list_remove(&SPL, tmp->process_id);
+    }
   }
+
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
   if (pd != NULL)
