@@ -386,11 +386,16 @@ int process_wait(int child_id)
   //   return status;
   // }
 
-  // Check if
+  debug("TMP->PARENT_ID: %i CUR PID: %i", tmp->parent_id, cur->pid);
+  // Check if process alive and if parent
   if (tmp->process_alive && tmp->parent_id != cur->pid)
   {
+    return status;
+  }
+  else
+  {
     // Wait for process child_id to die
-    sema_down(&tmp->sema);
+    //sema_down(&tmp->sema);
     status = tmp->exit_status;
   }
 
@@ -451,7 +456,7 @@ void process_cleanup(void)
     if (!tmp->free)
     {
       printf("# Remove process from SPL: %i pid: %i, \n", cur->tid, cur->pid);
-      sema_up(&tmp->sema);
+      //sema_up(&tmp->sema);
       process_list_remove(&SPL, cur->tid);
     }
   }
