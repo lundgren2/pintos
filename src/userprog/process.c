@@ -380,15 +380,9 @@ int process_wait(int child_id)
     return status;
   }
 
-  // Check if parent matches calling process
-  // if (tmp->parent_id != cur->pid)
-  // {
-  //   return status;
-  // }
-
-  debug("TMP->PARENT_ID: %i CUR PID: %i", tmp->parent_id, cur->pid);
+  debug("TMP->PARENT_ID: %i CUR PID: %i, CUR->TID: %i", tmp->parent_id, cur->pid, cur->tid);
   // Check if process alive and if parent
-  if (tmp->process_alive && tmp->parent_id != cur->pid)
+  if (tmp->process_alive && tmp->parent_id != cur->tid)
   {
     return status;
   }
@@ -434,7 +428,8 @@ void process_cleanup(void)
   }
 
   // Set exit status for the process
-  struct Process *tmp = process_list_find(&SPL, cur->tid); // check if cur->tid exists in process list
+  struct Process *tmp = process_list_find(&SPL, cur->tid);
+  // check if cur->tid exists in process list
   if (tmp != NULL)
   {
     printf("# TID in EXIT STATUS: %d, pid: %d\n", cur->tid, tmp->process_id);
@@ -456,7 +451,7 @@ void process_cleanup(void)
     if (!tmp->free)
     {
       printf("# Remove process from SPL: %i pid: %i, \n", cur->tid, cur->pid);
-      //sema_up(&tmp->sema);
+      sema_up(&tmp->sema);
       process_list_remove(&SPL, cur->tid);
     }
   }
