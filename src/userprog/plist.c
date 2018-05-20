@@ -13,12 +13,12 @@ void process_list_init(struct System_process_list *SPL)
     int i = 0;
     for (; i < MAX_PROCESS; ++i)
     {
-      SPL->plist_[i].free = true;
+      SPL->plist_[i] = NULL;
     }
   }
 }
 
-int process_list_insert(struct System_process_list *SPL, struct Process p)
+int process_list_insert(struct System_process_list *SPL, struct Process *p)
 {
   if (SPL == NULL)
   {
@@ -28,17 +28,17 @@ int process_list_insert(struct System_process_list *SPL, struct Process p)
 
   for (int i = 0; i < MAX_PROCESS; ++i)
   {
-    if (SPL->plist_[i].free)
+    if (SPL->plist_[i] == NULL)
     {
       SPL->plist_[i] = p;
       lock_release(&SPL->l);
       return i;
     }
   }
-
   lock_release(&SPL->l);
   return -1;
 }
+
 
 struct Process *process_list_find(struct System_process_list *SPL, int id)
 {
@@ -46,12 +46,18 @@ struct Process *process_list_find(struct System_process_list *SPL, int id)
   {
     return NULL;
   }
+    struct Process * tmp = NULL;
+
   for (int i = 0; i < MAX_PROCESS; i++)
   {
-    if (SPL->plist_[i].process_id == id)
-    {
-      return &SPL->plist_[i];
+    tmp = SPL->plist_[i];
+    if (tmp != NULL) {
+      if (SPL->plist_[i]->process_id == id)
+        {
+          return SPL->plist_[i];
+        }
     }
+    
   }
   return NULL;
 }
@@ -62,19 +68,24 @@ bool process_list_remove(struct System_process_list *SPL, int id)
   {
     return false;
   }
+  struct Process * tmp = NULL;
   for (int i = 0; i < MAX_PROCESS; i++)
   {
-    if (SPL->plist_[i].process_id == id)
-    {
-      lock_acquire(&SPL->l);
-      SPL->plist_[i].free = true;
-      SPL->plist_[i].process_alive = false;
-      lock_release(&SPL->l);
-      return true;
+    tmp = SPL->plist_[i];
+    if (tmp != NULL) {
+      if (SPL->plist_[i]->process_id == id)
+      {
+        lock_acquire(&SPL->l);
+        free(SPL->plist_[i]);    
+        SPL->plist_[i] = NULL;
+        lock_release(&SPL->l);
+        return true;
+      }
     }
   }
   return false;
 }
+
 
 void process_list_print(struct System_process_list *SPL)
 {
@@ -84,21 +95,21 @@ void process_list_print(struct System_process_list *SPL)
     printf("\n\t\t==== PROCESS LIST ====\n");
     printf("ID\t PARENT ID\t NAME\t\t EXIT_STATUS\n");
 
-    int i = 0;
-    for (; i < MAX_PROCESS; i++)
+    for (int i = 0; i < MAX_PROCESS; i++)
     {
-      if (SPL->plist_[i].process_id == 0)
+      struct Process *tmp = SPL->plist_[i];
+      if (SPL->plist_[i] == NULL) {
+        break;
+      } else if (SPL->plist_[i]->process_id == 0)
       {
         break;
       }
-      if (SPL->plist_[i].free == false)
-      {
+
         printf("%i\t %i\t\t %s\t\t %i \n",
-               SPL->plist_[i].process_id,
-               SPL->plist_[i].parent_id,
-               SPL->plist_[i].process_name,
-               SPL->plist_[i].exit_status);
-      }
+              tmp->process_id,
+              tmp->parent_id,
+              tmp->process_name,
+              tmp->exit_status);
     }
 
     printf("\n");

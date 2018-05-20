@@ -296,23 +296,22 @@ start_process(struct parameters_to_start_process *parameters)
        address, the first argument, the second argument etc. */
 
     // Skapa ny process och ge den värden
-    struct Process process;
-    process.process_id = thread_current()->tid;
-    strlcpy(process.process_name, thread_current()->name, 64);
-    process.parent_id = parameters->pid;
-    process.exit_status = -1;
-    process.free = false;
-    process.process_alive = true;
-    process.parent_alive = true;
-    sema_init(&process.sema, 0);
-
+    struct Process* process = malloc(sizeof(struct Process));
+    int i = thread_current()->tid;
+    process->process_id = i;
+    strlcpy(process->process_name, thread_current()->name, 64);
+    process->parent_id = parameters->pid;
+    process->exit_status = -1;
+    process->free = false; // kan ta bort
+    process->process_alive = true;
+    sema_init(&process->sema, 0);
     parameters->init_ok = true;
 
     // LOOKUP: how to check if the SPL is full
     process_list_insert(&SPL, process);
     process_print_list();
 
-    debug("==== PROCESS %s pid: %d Added to process List\n", process.process_name, process.process_id);
+    debug("==== PROCESS %s pid: %d Added to process List\n", process->process_name, process->process_id);
 
     // HACK if_.esp -= 12; /* Unacceptable solution. */
     // TODO: Fix command_line after setup_main_stack
@@ -330,7 +329,7 @@ start_process(struct parameters_to_start_process *parameters)
         thread_current()->tid,
         parameters->command_line);
 
-  sema_up(&parameters->sema);
+  sema_up(&(parameters->sema));
 
   /* If load fail, quit. Load may fail for several reasons.
      Some simple examples:
@@ -371,25 +370,26 @@ int process_wait(int child_id)
 
   debug("%s#%d: process_wait(%d) ENTERED\n",
         cur->name, cur->tid, child_id);
-  /* Yes! You need to do something good here ! */
 
+  /* Yes! You need to do something good here ! */
   struct Process *tmp = process_list_find(&SPL, child_id);
   // Check if child doesn't exist in process list. Already terminated
-  if (tmp == NULL || tmp->free == true)
+  if (tmp == NULL)
   {
     return status;
   }
 
-  debug("TMP->PARENT_ID: %i CUR PID: %i, CUR->TID: %i", tmp->parent_id, cur->pid, cur->tid);
+  debug("TMP->PARENT_ID: %i CUR PID: %i, CUR->TID: %i\n", tmp->parent_id, cur->pid, cur->tid);
   // Check if process alive and if parent
-  if (tmp->process_alive && tmp->parent_id != cur->tid)
+  if (!tmp->free || tmp->parent_id != cur->tid)
   {
     return status;
   }
   else
   {
     // Wait for process child_id to die
-    //sema_down(&tmp->sema);
+    debug("sema_down(&tmp->sema)\n");
+    sema_down(&tmp->sema);
     status = tmp->exit_status;
   }
 
@@ -448,12 +448,12 @@ void process_cleanup(void)
   // Remove process of the current thread
   if (tmp != NULL)
   {
-    if (!tmp->free)
-    {
-      printf("# Remove process from SPL: %i pid: %i, \n", cur->tid, cur->pid);
-      sema_up(&tmp->sema);
-      process_list_remove(&SPL, cur->tid);
-    }
+   
+    printf("# Remove process from SPL: %i pid: %i, \n", cur->tid, cur->pid);
+    debug("sema_up(&tmp->sema)\n");
+    //sema_up(&tmp->sema);
+    process_list_remove(&SPL, cur->tid);
+    
   }
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
