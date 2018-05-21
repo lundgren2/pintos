@@ -95,7 +95,7 @@ struct thread
   struct list_elem elem; /* List element. */
   /* YES! You may want to add stuff. But make note of point 2 above. */
   struct map file_map;
-  int pid; // process_id
+  int pid; // process id
 
 #ifdef USERPROG
   /* Owned by userprog/process.c. */

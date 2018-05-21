@@ -157,7 +157,7 @@ void process_exit(int status)
   struct Process *tmp = process_list_find(&SPL, thread_current()->tid);
   if (tmp != NULL)
   {
-    tmp->exit_status = status;
+    process->exit_status = status;
   }
 }
 
@@ -295,13 +295,13 @@ start_process(struct parameters_to_start_process *parameters)
     // Skapa ny process och ge den värden
     struct Process *process = malloc(sizeof(struct Process));
     int i = thread_current()->tid;
-    process->process_id = i;
-    strlcpy(process->process_name, thread_current()->name, 64);
+    process->id = i;
+    strlcpy(process->name, thread_current()->name, 64);
     process->parent_id = parameters->pid;
     thread_current()->pid = parameters->pid;
     process->free = false;
     process->exit_status = -1;
-    process->process_alive = true;
+    process->alive = true;
     process->parent_alive = true;
     sema_init(&process->sema, 0);
     parameters->init_ok = true;
@@ -310,7 +310,7 @@ start_process(struct parameters_to_start_process *parameters)
     process_list_insert(&SPL, process);
     process_print_list();
 
-    debug("==== PROCESS %s pid: %d Added to process List\n", process->process_name, process->process_id);
+    debug("==== PROCESS %s pid: %d Added to process List\n", process->name, process->id);
 
     // HACK if_.esp -= 12; /* Unacceptable solution. */
     // TODO: Fix command_line after setup_main_stack
@@ -380,19 +380,19 @@ int process_wait(int child_id)
 
   // Check if it was not a child of the calling process,
   if (tmp != NULL) {
-    stuct Process *tmpParent = process_list_find(&SPL, tmp->parent_id);
-    if (tmpParent->process_id != cur->tid) {
+    stuct Process *tmpParent = process_list_find(&SPL, process->parent_id);
+    if (tmpParent->id != cur->tid) {
       return status;
     }
   }
 
-  debug("TMP->PARENT_ID: %i CUR PID: %i, CUR->TID: %i\n", tmp->parent_id, cur->pid, cur->tid);
+  debug("process->PARENT_ID: %i CUR PID: %i, CUR->TID: %i\n", process->parent_id, cur->pid, cur->tid);
   // Check if process alive and if parent
-  if (!tmp->free && tmp->parent_id == cur->tid)
+  if (!process->free && process->parent_id == cur->tid)
   {
     // Wait for process child_id to die
-    sema_down(&tmp->sema);
-    status = process_list_remove(&SPL, tmp->process_id);
+    sema_down(&process->sema);
+    status = process_list_remove(&SPL, process->id);
   }
 
   debug("%s#%d: process_wait(%d) RETURNS %d\n",
@@ -431,16 +431,16 @@ void process_cleanup(void)
   // Set exit status for the process
   struct Process *tmp = process_list_find(&SPL, cur->tid);
   lock_aquire(&SPL->l);
-  if (tmp != NULL && !tmp->free)
+  if (tmp != NULL && !process->free)
   {
-    status = tmp->exit_status;
-    struct Process *tmpParent = process_list_find(&SPL, tmp->parent_id);
+    status = process->exit_status;
+    struct Process *tmpParent = process_list_find(&SPL, process->parent_id);
     if (tmpParent != NULL && tmpParent->free)
     {
-      tmp->parent_alive = false;
-      process_list_remove(&SPL, tmp->process_id);
+      process->parent_alive = false;
+      process_list_remove(&SPL, process->id);
     }
-    tmp->free = true;
+    process->free = true;
   }
     lock_release(&SPL->l);
 
@@ -475,9 +475,9 @@ void process_cleanup(void)
 
   if (tmp != NULL)
   {
-    tmp->process_alive = false;
-    debug("sema_up(&tmp->sema) process_id: %i\n ", tmp->process_id);
-    sema_up(&tmp->sema);
+    process->alive = false;
+    debug("sema_up(&process->sema) process_id: %i\n ", process->id);
+    sema_up(&process->sema);
   }
 
 }

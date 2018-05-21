@@ -5,12 +5,12 @@
 
 struct Process
 {
-  int process_id;
-  char process_name[64];
+  int id;
+  char name[64];
   int parent_id;
   int exit_status;
   bool free;
-  bool process_alive;
+  bool alive;
   bool parent_alive;
   struct semaphore sema;
 };

@@ -11,30 +11,30 @@ void process_list_init(struct System_process_list *SPL)
   }
 
   lock_init(&SPL->l);
-  struct Process *tmp = NULL;
+  struct Process *process = NULL;
   for (int i = 0; i < MAX_PROCESS; ++i)
   {
-    tmp = SPL->plist_[i];
-    tmp->free = true;
-    sema_init(&tmp->sema, 0);
+    process = SPL->plist_[i];
+    process->free = true;
+    sema_init(&process->sema, 0);
   }
 }
 
 // TODO: Check if insert works after NULL fix
-int process_list_insert(struct System_process_list *SPL, struct Process *p)
+int process_list_insert(struct System_process_list *SPL, struct Process *process)
 {
   if (SPL == NULL)
   {
     return -1;
   }
   lock_acquire(&SPL->l);
-  struct Process *tmp = NULL;
+  struct Process *process = NULL;
   for (int i = 0; i < MAX_PROCESS; ++i)
   {
-    tmp = SPL->plist_[i];
-    if (tmp->free)
+    process = SPL->plist_[i];
+    if (process->free)
     {
-      tmp = p;
+      p = p;
       lock_release(&SPL->l);
       return i;
     }
@@ -43,22 +43,22 @@ int process_list_insert(struct System_process_list *SPL, struct Process *p)
   return -1;
 }
 
-struct Process *process_list_find(struct System_process_list *SPL, int id)
+struct Process *processrocess_list_find(struct System_process_list *SPL, int id)
 {
   if (SPL == NULL)
   {
     return NULL;
   }
 
-  struct Process *tmp = NULL;
+  struct Process *process = NULL;
   for (int i = 0; i < MAX_PROCESS; i++)
   {
-    tmp = SPL->plist_[i];
-    if (tmp != NULL)
+    process = SPL->plist_[i];
+    if (p != NULL)
     {
-      if (SPL->plist_[i]->process_id == id)
+      if (process->id == id)
       {
-        return SPL->plist_[i];
+        return p;
       }
     }
   }
@@ -73,19 +73,19 @@ int process_list_remove(struct System_process_list *SPL, int id)
     return false;
   }
   int exit_status;
-  struct Process *tmp = NULL;
+  struct Process *process = NULL;
   for (int i = 0; i < MAX_PROCESS; i++)
   {
-    tmp = SPL->plist_[i];
-    if (tmp != NULL)
+    process = SPL->plist_[i];
+    if (p != NULL)
     {
-      if (tmp->process_id == id)
+      if (process->id == id)
       {
         lock_acquire(&SPL->l);
-        exit_status = tmp->exit_status;
-        free(tmp->name);
-        tmp->free = true;
-        tmp->process_alive = false;
+        exit_status = process->exit_status;
+        free(process->name);
+        process->free = true;
+        process->alive = false;
         lock_release(&SPL->l);
         return exit_status;
       }
@@ -104,22 +104,22 @@ void process_list_print(struct System_process_list *SPL)
 
     for (int i = 0; i < MAX_PROCESS; i++)
     {
-      struct Process *tmp = SPL->plist_[i];
-      if (SPL->plist_[i] == NULL)
+      struct Process *process = SPL->plist_[i];
+      if (process == NULL)
       {
         break;
       }
-      else if (SPL->plist_[i]->process_id == 0)
+      else if (process->id == 0)
       {
         break;
       }
 
       debug("%i\t %i\t\t %s\t\t %s\t\t %i \n",
-            tmp->process_id,
-            tmp->parent_id,
-            tmp->process_name,
-            tmp->free ? "FREE" : "BUSY",
-            tmp->exit_status);
+            process->id,
+            process->parent_id,
+            process->name,
+            process->free ? "FREE" : "BUSY",
+            process->exit_status);
     }
 
     debug("\n");
