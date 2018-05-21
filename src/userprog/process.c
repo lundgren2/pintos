@@ -299,6 +299,7 @@ start_process(struct parameters_to_start_process *parameters)
     strlcpy(process->process_name, thread_current()->name, 64);
     process->parent_id = parameters->pid;
     thread_current()->pid = parameters->pid;
+    process->free = false;
     process->exit_status = -1;
     process->process_alive = true;
     process->parent_alive = true;
@@ -377,19 +378,21 @@ int process_wait(int child_id)
     return status;
   }
 
-  // KANSKE ta bort
-  if (tmp->parent_id != cur->tid)
-  {
-    return status;
+  // Check if it was not a child of the calling process,
+  if (tmp != NULL) {
+    stuct Process *tmpParent = process_list_find(&SPL, tmp->parent_id);
+    if (tmpParent->process_id != cur->tid) {
+      return status;
+    }
   }
+
   debug("TMP->PARENT_ID: %i CUR PID: %i, CUR->TID: %i\n", tmp->parent_id, cur->pid, cur->tid);
   // Check if process alive and if parent
-  if (tmp->process_alive && tmp->parent_id == cur->tid)
+  if (!tmp->free && tmp->parent_id == cur->tid)
   {
     // Wait for process child_id to die
     sema_down(&tmp->sema);
-    status = tmp->exit_status;
-    tmp->process_alive = false;
+    status = process_list_remove(&SPL, tmp->process_id);
   }
 
   debug("%s#%d: process_wait(%d) RETURNS %d\n",
@@ -419,7 +422,6 @@ void process_cleanup(void)
 
   // remove if exists in filemap
   struct map *m = &cur->file_map;
-
   int mapFound = map_find(&m, cur->tid);
   if (mapFound != -1)
   {
@@ -428,15 +430,21 @@ void process_cleanup(void)
 
   // Set exit status for the process
   struct Process *tmp = process_list_find(&SPL, cur->tid);
-  if (tmp != NULL)
+  lock_aquire(&SPL->l);
+  if (tmp != NULL && !tmp->free)
   {
-
-    // TODO: Kolla upp if-satsen
-    if (tmp->process_alive)
+    status = tmp->exit_status;
+    struct Process *tmpParent = process_list_find(&SPL, tmp->parent_id);
+    if (tmpParent != NULL && tmpParent->free)
     {
-      status = tmp->exit_status;
+      tmp->parent_alive = false;
+      process_list_remove(&SPL, tmp->process_id);
     }
+    tmp->free = true;
   }
+    lock_release(&SPL->l);
+
+
 
   /* Later tests DEPEND on this output to work correct. You will have
    * to find the actual exit status in your process list. It is
@@ -446,26 +454,6 @@ void process_cleanup(void)
    * possibly before the printf is completed.)
    */
   printf("%s: exit(%d)\n", thread_name(), status);
-
-  if (tmp != NULL)
-  {
-    struct Process *tmpParent = process_list_find(&SPL, tmp->parent_id);
-
-    // TODO: kolla att den används
-    if (tmpParent != NULL && tmpParent->process_alive)
-    {
-      process_list_remove(&SPL, tmpParent->process_id);
-    }
-
-    // Remove process of the current thread
-    debug("sema_up(&tmp->sema) process_id: %i\n ", tmp->process_id);
-    sema_up(&tmp->sema);
-    if (tmp->process_id == cur->tid && !tmp->process_alive)
-    {
-      int tmpID = tmp->process_id;
-      process_list_remove(&SPL, tmp->process_id);
-    }
-  }
 
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
@@ -484,6 +472,14 @@ void process_cleanup(void)
   }
   debug("%s#%d: process_cleanup() DONE with status %d\n",
         cur->name, cur->tid, status);
+
+  if (tmp != NULL)
+  {
+    tmp->process_alive = false;
+    debug("sema_up(&tmp->sema) process_id: %i\n ", tmp->process_id);
+    sema_up(&tmp->sema);
+  }
+
 }
 
 /* Sets up the CPU for running user code in the current

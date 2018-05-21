@@ -6,18 +6,21 @@
 
 void process_list_init(struct System_process_list *SPL)
 {
-  if (SPL == NULL)
+  if (SPL == NULL) {
     return -1;
+  }
+
   lock_init(&SPL->l);
+  struct Process *tmp = NULL;
+  for (int i = 0; i < MAX_PROCESS; ++i)
   {
-    int i = 0;
-    for (; i < MAX_PROCESS; ++i)
-    {
-      SPL->plist_[i] = NULL;
-    }
+    tmp = SPL->plist_[i];
+    tmp->free = true;
+    sema_init(&tmp->sema, 0);
   }
 }
 
+// TODO: Check if insert works after NULL fix
 int process_list_insert(struct System_process_list *SPL, struct Process *p)
 {
   if (SPL == NULL)
@@ -25,12 +28,13 @@ int process_list_insert(struct System_process_list *SPL, struct Process *p)
     return -1;
   }
   lock_acquire(&SPL->l);
-
+  struct Process *tmp = NULL;
   for (int i = 0; i < MAX_PROCESS; ++i)
   {
-    if (SPL->plist_[i] == NULL)
+    tmp = SPL->plist_[i];
+    if (tmp->free)
     {
-      SPL->plist_[i] = p;
+      tmp = p;
       lock_release(&SPL->l);
       return i;
     }
@@ -45,8 +49,8 @@ struct Process *process_list_find(struct System_process_list *SPL, int id)
   {
     return NULL;
   }
-  struct Process *tmp = NULL;
 
+  struct Process *tmp = NULL;
   for (int i = 0; i < MAX_PROCESS; i++)
   {
     tmp = SPL->plist_[i];
@@ -61,12 +65,14 @@ struct Process *process_list_find(struct System_process_list *SPL, int id)
   return NULL;
 }
 
-bool process_list_remove(struct System_process_list *SPL, int id)
+// remove process from process list and return exit_status for the process
+int process_list_remove(struct System_process_list *SPL, int id)
 {
   if (SPL == NULL)
   {
     return false;
   }
+  int exit_status;
   struct Process *tmp = NULL;
   for (int i = 0; i < MAX_PROCESS; i++)
   {
@@ -76,14 +82,16 @@ bool process_list_remove(struct System_process_list *SPL, int id)
       if (tmp->process_id == id)
       {
         lock_acquire(&SPL->l);
-        free(SPL->plist_[i]);
-        SPL->plist_[i] = NULL;
+        exit_status = tmp->exit_status;
+        free(tmp->name);
+        tmp->free = true;
+        tmp->process_alive = false;
         lock_release(&SPL->l);
-        return true;
+        return exit_status;
       }
     }
   }
-  return false;
+  return -2;
 }
 
 void process_list_print(struct System_process_list *SPL)
@@ -106,10 +114,11 @@ void process_list_print(struct System_process_list *SPL)
         break;
       }
 
-      debug("%i\t %i\t\t %s\t\t %i \n",
+      debug("%i\t %i\t\t %s\t\t %s\t\t %i \n",
             tmp->process_id,
             tmp->parent_id,
             tmp->process_name,
+            tmp->free ? "FREE" : "BUSY",
             tmp->exit_status);
     }
 
