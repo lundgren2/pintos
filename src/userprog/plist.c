@@ -6,7 +6,8 @@
 
 void process_list_init(struct System_process_list *SPL)
 {
-  if (SPL == NULL) {
+  if (SPL == NULL)
+  {
     return -1;
   }
 
@@ -21,7 +22,7 @@ void process_list_init(struct System_process_list *SPL)
 }
 
 // TODO: Check if insert works after NULL fix
-int process_list_insert(struct System_process_list *SPL, struct Process *process)
+int process_list_insert(struct System_process_list *SPL, struct Process *p)
 {
   if (SPL == NULL)
   {
@@ -32,9 +33,9 @@ int process_list_insert(struct System_process_list *SPL, struct Process *process
   for (int i = 0; i < MAX_PROCESS; ++i)
   {
     process = SPL->plist_[i];
-    if (process->free)
+    if (process != NULL && process->free)
     {
-      p = p;
+      process = p;
       lock_release(&SPL->l);
       return i;
     }
@@ -43,7 +44,7 @@ int process_list_insert(struct System_process_list *SPL, struct Process *process
   return -1;
 }
 
-struct Process *processrocess_list_find(struct System_process_list *SPL, int id)
+struct Process *process_list_find(struct System_process_list *SPL, int id)
 {
   if (SPL == NULL)
   {
@@ -54,11 +55,11 @@ struct Process *processrocess_list_find(struct System_process_list *SPL, int id)
   for (int i = 0; i < MAX_PROCESS; i++)
   {
     process = SPL->plist_[i];
-    if (p != NULL)
+    if (process != NULL)
     {
       if (process->id == id)
       {
-        return p;
+        return process;
       }
     }
   }
@@ -77,7 +78,7 @@ int process_list_remove(struct System_process_list *SPL, int id)
   for (int i = 0; i < MAX_PROCESS; i++)
   {
     process = SPL->plist_[i];
-    if (p != NULL)
+    if (process != NULL)
     {
       if (process->id == id)
       {

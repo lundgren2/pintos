@@ -95,8 +95,7 @@ void *setup_main_stack(const char *command_line, void *stack_top)
 
   /* calculate how many words the command_line contain */
   {
-    const char *tmp = " ";
-    argc = count_args(command_line, tmp);
+    argc = count_args(command_line, " ");
     STACK_DEBUG("# argc = %d\n", argc);
   }
   /* calculate the size needed on our simulated stack */
@@ -154,8 +153,8 @@ void process_init(void)
  * from thread_exit - do not call cleanup twice! */
 void process_exit(int status)
 {
-  struct Process *tmp = process_list_find(&SPL, thread_current()->tid);
-  if (tmp != NULL)
+  struct Process *process = process_list_find(&SPL, thread_current()->tid);
+  if (process != NULL)
   {
     process->exit_status = status;
   }
@@ -371,17 +370,19 @@ int process_wait(int child_id)
         cur->name, cur->tid, child_id);
 
   /* Yes! You need to do something good here ! */
-  struct Process *tmp = process_list_find(&SPL, child_id);
+  struct Process *process = process_list_find(&SPL, child_id);
   // Check if child doesn't exist in process list. Already terminated
-  if (tmp == NULL)
+  if (process == NULL)
   {
     return status;
   }
 
   // Check if it was not a child of the calling process,
-  if (tmp != NULL) {
-    stuct Process *tmpParent = process_list_find(&SPL, process->parent_id);
-    if (tmpParent->id != cur->tid) {
+  if (process != NULL)
+  {
+    struct Process *process_parent = process_list_find(&SPL, process->parent_id);
+    if (process_parent->id != cur->tid)
+    {
       return status;
     }
   }
@@ -429,22 +430,18 @@ void process_cleanup(void)
   }
 
   // Set exit status for the process
-  struct Process *tmp = process_list_find(&SPL, cur->tid);
-  lock_aquire(&SPL->l);
-  if (tmp != NULL && !process->free)
+  struct Process *process = process_list_find(&SPL, cur->tid);
+  if (process != NULL && !process->free)
   {
     status = process->exit_status;
-    struct Process *tmpParent = process_list_find(&SPL, process->parent_id);
-    if (tmpParent != NULL && tmpParent->free)
+    struct Process *process_parent = process_list_find(&SPL, process->parent_id);
+    if (process_parent != NULL && process_parent->free)
     {
       process->parent_alive = false;
       process_list_remove(&SPL, process->id);
     }
     process->free = true;
   }
-    lock_release(&SPL->l);
-
-
 
   /* Later tests DEPEND on this output to work correct. You will have
    * to find the actual exit status in your process list. It is
@@ -473,13 +470,12 @@ void process_cleanup(void)
   debug("%s#%d: process_cleanup() DONE with status %d\n",
         cur->name, cur->tid, status);
 
-  if (tmp != NULL)
+  if (process != NULL)
   {
     process->alive = false;
     debug("sema_up(&process->sema) process_id: %i\n ", process->id);
     sema_up(&process->sema);
   }
-
 }
 
 /* Sets up the CPU for running user code in the current
