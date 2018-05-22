@@ -103,7 +103,7 @@ void *setup_main_stack(const char *command_line, void *stack_top)
   STACK_DEBUG("# total_size = %d\n", total_size);
 
   /* calculate where the final stack top will be located */
-  esp = stack_top - total_size - 4;
+  esp = stack_top - total_size;
 
   /* setup return address and argument count */
   esp->ret = 0;
@@ -122,17 +122,23 @@ void *setup_main_stack(const char *command_line, void *stack_top)
   /* build argv array and insert null-characters after each word */
   esp->argv[0] = &cmd_line_on_stack[0];
   int argv_count = 1;
-  for (size_t i = 1; i < line_size; i++)
-  {
-    if (cmd_line_on_stack[i] == ' ')
-    {
-      cmd_line_on_stack[i] = '\0'; // Insert null-character
-      esp->argv[argv_count++] = &cmd_line_on_stack[i + 1];
 
+  if (cmd_line_on_stack[i] == ' ')
+    for (size_t i = 1; i < line_size; i++)
+    {
+      {
+        cmd_line_on_stack[i] = '\0'; // Insert null-character
+        int j = i + 1;
+        while (cmd_line_on_stack[j] == ' ')
+        {
+          j++;
+        }
+        i = j;
+        esp->argv[argv_count++] = &cmd_line_on_stack[i];
+      }
       if (argv_count >= argc)
         break;
     }
-  }
 
   return esp; /* the new stack top */
 }
