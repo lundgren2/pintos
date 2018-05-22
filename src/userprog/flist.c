@@ -44,23 +44,18 @@ value_t map_remove(struct map *m, key_t k)
 
 void map_remove_if(struct map *m, value_t v, int aux)
 {
-  bool cond = true;
-  if (v == NULL)
+  if (v != NULL && m != NULL)
   {
-    debug("# v is null\n");
-    cond = false;
-  }
-
-  for (int key = 0; key < MAP_SIZE; key++)
-  {
-    if (m->content[key] != NULL)
+    for (int key = 0; key < MAP_SIZE; key++)
     {
-      debug("map_remove_if map[%d]: %d", key, v);
-      if (cond)
+      if (m->content[key] != NULL && v == map_find(m, key))
       {
-        map_remove(m, key);
+        debug("map_remove_if map[%d]: %d\n", key, v);
+          map_remove(m, key);
       }
     }
+   } else {
+    debug("# v is null\n");
   }
 }
 

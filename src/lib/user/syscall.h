@@ -48,6 +48,6 @@ int inumber (int fd);
 // new 8/2 -18 lab 17
 void sleep(int millis);
 void plist(void);
-
+int nr_of_calls(void);
 
 #endif /* lib/user/syscall.h */

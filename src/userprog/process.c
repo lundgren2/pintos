@@ -79,8 +79,7 @@ void *setup_main_stack(const char *command_line, void *stack_top)
   * one address, and at that address (the first) char (of a possible
   * sequence) can be found. */
   char *cmd_line_on_stack;
-  char *ptr_save;
-  int i = 0;
+  // char *ptr_save;
 
   /* calculate the bytes needed to store the command_line */
   line_size = strlen(command_line) + 1;
@@ -116,7 +115,7 @@ void *setup_main_stack(const char *command_line, void *stack_top)
   cmd_line_on_stack = &esp->argv[argc + 1];
 
   /* copy the command_line to where it should be in the stack */
-  for (size_t i = 0; i < line_size; i++)
+  for (int i = 0; i < line_size; i++)
   {
     cmd_line_on_stack[i] = command_line[i];
   }
@@ -124,7 +123,7 @@ void *setup_main_stack(const char *command_line, void *stack_top)
   esp->argv[0] = &cmd_line_on_stack[0];
   int argv_count = 1;
 
-  for (size_t i = 1; i < line_size; i++)
+  for (int i = 1; i < line_size; i++)
   {
     if (isspace(cmd_line_on_stack[i]))
     {
@@ -428,8 +427,8 @@ void process_cleanup(void)
 
   // remove if exists in filemap
   struct map *m = &cur->file_map;
-  int mapFound = map_find(&m, cur->tid);
-  if (mapFound != -1)
+  int mapFound = map_find(m, cur->tid);
+  if ((int)mapFound != -1)
   {
     map_remove_if(m, mapFound, 0);
   }
@@ -440,15 +439,11 @@ void process_cleanup(void)
   {
     if (!process->free)
     {
-      debug("DEBUG #1\n");
       status = process->exit_status;
       struct Process *process_parent = process_list_find(&SPL, process->parent_id);
       if (process_parent != NULL)
       {
-        debug("DEBUG #2\n");
-
         process->parent_alive = false;
-        //status = process_list_remove(&SPL, process->id);
       }
     }
   }

@@ -70,7 +70,7 @@ int process_list_remove(struct System_process_list *SPL, int id)
     {
       lock_acquire(&SPL->l);
       exit_status = SPL->plist_[i]->exit_status;
-      free(SPL->plist_[i]);
+      // free(SPL->plist_[i]); // Check: kanske inte behövs?
       SPL->plist_[i] = NULL;
       lock_release(&SPL->l);
       return exit_status;

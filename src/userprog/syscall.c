@@ -49,7 +49,8 @@ static int32_t sys_read_(int32_t FD, char *buf, const unsigned size)
 {
   struct thread *tr = thread_current();
   struct map *m = &tr->file_map;
-  if (map_find(m, (int)FD) != -1)
+  struct file *file = map_find(m, (int)FD);
+  if ((int)file != -1)
   { // Filen Öppnad
     struct file *f = map_find(m, FD);
     if (f != NULL)
@@ -65,7 +66,8 @@ static int32_t sys_write_(int32_t FD, char *buf, const unsigned size)
 {
   struct thread *tr = thread_current();
   struct map *m = &tr->file_map;
-  if (map_find(m, (int)FD) != -1)
+  struct file *file = map_find(m, (int)FD);
+  if ((int)file != -1)
   { // Filen öppnad FD != STDIN_FILENO
     struct file *f = map_find(m, FD);
     if (f != NULL)
@@ -120,10 +122,10 @@ void sys_seek_(int FD, unsigned pos)
 {
   struct thread *tr = thread_current();
   struct map *m = &tr->file_map;
-  struct file *fil = map_find(m, FD);
-  if (fil != -1)
+  struct file *file = map_find(m, FD);
+  if ((int)file != -1)
   {
-    return file_seek(fil, (off_t)pos);
+    return file_seek(file, (off_t)pos);
   }
 }
 
@@ -131,11 +133,10 @@ unsigned sys_tell_(int FD)
 {
   struct thread *tr = thread_current();
   struct map *m = &tr->file_map;
-  struct file *fil = map_find(m, FD);
-  int i = 0;
-  if (fil != -1)
+  struct file *file = map_find(m, FD);
+  if ((int)file != -1)
   {
-    return file_tell(fil);
+    return file_tell(file);
   }
   else
   {
@@ -147,10 +148,10 @@ unsigned sys_filesize_(int FD)
 {
   struct thread *tr = thread_current();
   struct map *m = &tr->file_map;
-  struct file *fil = map_find(m, FD);
-  if (fil != -1)
+  struct file *file = map_find(m, FD);
+  if ((int)file != -1)
   {
-    return file_length(fil);
+    return file_length(file);
   }
   else
   {
@@ -192,7 +193,7 @@ static void syscall_handler(struct intr_frame *f)
         f->eax = nr_bytes;
       }
       else
-      { // om fil
+      { // om file
         int32_t nr_bytes = sys_read_(FD, (char *)buffer, (unsigned)len);
         f->eax = nr_bytes;
       }
@@ -211,7 +212,7 @@ static void syscall_handler(struct intr_frame *f)
         f->eax = nr_bytes;
       }
       else
-      { //Hantera fil istället
+      { //Hantera file istället
         int32_t nr_bytes = sys_write_(FD, (char *)buffer, (unsigned)len);
         f->eax = nr_bytes;
       }
