@@ -27,7 +27,7 @@ int process_list_insert(struct System_process_list *SPL, struct Process *p)
   lock_acquire(&SPL->l);
   for (int i = 0; i < MAX_PROCESS; ++i)
   {
-    if (SPL->plist_[i] == NULL || SPL->plist_[i]->free)
+    if (SPL->plist_[i] == NULL)
     {
       SPL->plist_[i] = p;
       lock_release(&SPL->l);
@@ -64,22 +64,16 @@ int process_list_remove(struct System_process_list *SPL, int id)
     return false;
   }
   int exit_status;
-  struct Process *process = NULL;
   for (int i = 0; i < MAX_PROCESS; i++)
   {
-    process = SPL->plist_[i];
-    if (process != NULL)
+    if (SPL->plist_[i] != NULL && SPL->plist_[i]->id == id)
     {
-      if (process->id == id)
-      {
-        lock_acquire(&SPL->l);
-        exit_status = process->exit_status;
-        free(process->name);
-        process->free = true;
-        process->alive = false;
-        lock_release(&SPL->l);
-        return exit_status;
-      }
+      lock_acquire(&SPL->l);
+      exit_status = SPL->plist_[i]->exit_status;
+      free(SPL->plist_[i]);
+      SPL->plist_[i] = NULL;
+      lock_release(&SPL->l);
+      return exit_status;
     }
   }
   return -2;
@@ -97,7 +91,7 @@ void process_list_print(struct System_process_list *SPL)
     for (int i = 0; i < MAX_PROCESS; i++)
     {
       process = SPL->plist_[i];
-      if (SPL->plist_[i] != NULL)
+      if (process != NULL)
       {
         debug("%i\t %i\t\t %s\t\t  %i\n",
               process->id,

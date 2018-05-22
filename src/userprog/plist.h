@@ -16,7 +16,7 @@ struct Process
 };
 static struct System_process_list
 {
-  struct Process* plist_[MAX_PROCESS];
+  struct Process *plist_[MAX_PROCESS];
   struct lock l;
 };
 

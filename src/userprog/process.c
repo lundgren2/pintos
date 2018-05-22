@@ -380,12 +380,11 @@ int process_wait(int child_id)
   if (process != NULL)
   {
     struct Process *process_parent = process_list_find(&SPL, process->parent_id);
-    if (process_parent->id != cur->tid)
+    if (process_parent != NULL && process_parent->id != cur->tid)
     {
       return status;
     }
   }
-
   debug("process->PARENT_ID: %i CUR PID: %i, CUR->TID: %i\n", process->parent_id, cur->pid, cur->tid);
   // Check if process alive and if parent
   if (!process->free && process->parent_id == cur->tid)
@@ -430,16 +429,21 @@ void process_cleanup(void)
 
   // Set exit status for the process
   struct Process *process = process_list_find(&SPL, cur->tid);
-  if (process != NULL && !process->free)
+  if (process != NULL)
   {
-    status = process->exit_status;
-    struct Process *process_parent = process_list_find(&SPL, process->parent_id);
-    if (process_parent != NULL && process_parent->free)
+    if (!process->free)
     {
-      process->parent_alive = false;
-      process_list_remove(&SPL, process->id);
+      debug("DEBUG #1\n");
+      status = process->exit_status;
+      struct Process *process_parent = process_list_find(&SPL, process->parent_id);
+      if (process_parent != NULL)
+      {
+        debug("DEBUG #2\n");
+
+        process->parent_alive = false;
+        //status = process_list_remove(&SPL, process->id);
+      }
     }
-    process->free = true;
   }
 
   /* Later tests DEPEND on this output to work correct. You will have
