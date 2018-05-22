@@ -205,6 +205,7 @@ void inode_close(struct inode *inode)
     lock_release(&inode_list_lock); // RELEASE LIST
     return;
   }
+  lock_release(&inode->lock); // ensure that lock is released lab20
 }
 
 /* Marks INODE to be deleted when it is closed by the last caller who
