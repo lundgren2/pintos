@@ -26,7 +26,7 @@
 static struct System_process_list SPL;
 
 /*
- pintos -p ../../examples/sumargv -a sumargv -v -k --fs-disk=2 -- -f -q run 'sumargv 1 2 3 4'
+ pintos -p ../examples/sumargv -a sumargv -v -k --fs-disk=2 -- -f -q run 'sumargv 1 2 3 4'
 */
 
 /* FROM setup-argv.c */
@@ -103,7 +103,7 @@ void *setup_main_stack(const char *command_line, void *stack_top)
   STACK_DEBUG("# total_size = %d\n", total_size);
 
   /* calculate where the final stack top will be located */
-  esp = stack_top - total_size;
+  esp = stack_top - total_size - 4;
 
   /* setup return address and argument count */
   esp->ret = 0;
