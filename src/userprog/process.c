@@ -1,6 +1,7 @@
 #include <debug.h>
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 
 #include "userprog/gdt.h" /* SEL_* constants */
 #include "userprog/process.h"
@@ -123,22 +124,22 @@ void *setup_main_stack(const char *command_line, void *stack_top)
   esp->argv[0] = &cmd_line_on_stack[0];
   int argv_count = 1;
 
-  if (cmd_line_on_stack[i] == ' ')
-    for (size_t i = 1; i < line_size; i++)
+  for (size_t i = 1; i < line_size; i++)
+  {
+    if (isspace(cmd_line_on_stack[i]))
     {
+      cmd_line_on_stack[i] = '\0'; // Insert null-character
+      int j = i + 1;
+      while (isspace(cmd_line_on_stack[j]))
       {
-        cmd_line_on_stack[i] = '\0'; // Insert null-character
-        int j = i + 1;
-        while (cmd_line_on_stack[j] == ' ')
-        {
-          j++;
-        }
-        i = j;
-        esp->argv[argv_count++] = &cmd_line_on_stack[i];
+        j++;
       }
-      if (argv_count >= argc)
-        break;
+      i = j;
+      esp->argv[argv_count++] = &cmd_line_on_stack[i];
     }
+    if (argv_count >= argc)
+      break;
+  }
 
   return esp; /* the new stack top */
 }
