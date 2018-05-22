@@ -160,9 +160,9 @@ inode_reopen(struct inode *inode)
 {
   if (inode != NULL)
   {
-    lock_acquire(&inode->lock); // lab20
+    //lock_acquire(&inode->lock); // lab20
     inode->open_cnt++;
-    lock_release(&inode->lock); // lab20
+    //lock_release(&inode->lock); // lab20
   }
   return inode;
 }
@@ -183,6 +183,7 @@ void inode_close(struct inode *inode)
   if (inode == NULL)
     return;
 
+  lock_acquire(&inode_list_lock); // LOCK LIST lab20
   lock_acquire(&inode->lock);
   /* Release resources if this was the last opener. */
   if (--inode->open_cnt == 0)
@@ -190,7 +191,6 @@ void inode_close(struct inode *inode)
     lock_release(&inode->lock);
 
     /* Remove from inode list. */
-    lock_acquire(&inode_list_lock); // LOCK LIST lab20
     list_remove(&inode->elem);
 
     /* Deallocate blocks if the file is marked as removed. */
@@ -205,7 +205,8 @@ void inode_close(struct inode *inode)
     lock_release(&inode_list_lock); // RELEASE LIST
     return;
   }
-  lock_release(&inode->lock); // ensure that lock is released lab20
+  lock_release(&inode->lock);     // ensure that lock is released lab20
+  lock_release(&inode_list_lock); // RELEASE LIST
 }
 
 /* Marks INODE to be deleted when it is closed by the last caller who
