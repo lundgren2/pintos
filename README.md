@@ -1,17 +1,20 @@
 # TDIU16 - Pintos
 
-#### Att göra:
+#### ToDo:
 
-* 170509 - Fixa test för create file test.
-* Kolla om userprog/process.c är klar.
+* * [x] 170509: Fixa test för create file test.
+* * [ ] 180518: Kontrollera varför inte test longrun_nowait fungerar med för många childs. (ca 10 50)
+* * [x] 180518: Fixa varför comman_line i arguments i start_process fuckar - Felet var en semafor som låg innan utskriften.
+* [ ] Fixa så att process_wait och process_cleanup fungerar korrekt med typ if-satser.
+      `
 
-** 20170509 **
+#### Changelog:
 
-#### Gjort:
-
-* 20170509: Fått pintos att kompilera
-* 20180410: Redovisat Deadline 1
-* 20180424: Refaktoriserat syscall_handler och flyttat repot till GitLab
+* 170509: Fått pintos att kompilera
+* 180410: Redovisat Deadline 1
+* 180424: Refaktoriserat syscall_handler och flyttat repot till GitLab
+* 180518: Fixat plist.c så att insert och remove fungerar => exit-staus fungerar.
+* 180519: Fixat så Plist innehåller pekare till processerna + Fixat så semaforerna i process fungerar men inte synkat.
 
 ## Contribute
 

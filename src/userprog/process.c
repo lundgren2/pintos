@@ -95,8 +95,7 @@ void *setup_main_stack(const char *command_line, void *stack_top)
 
   /* calculate how many words the command_line contain */
   {
-    const char *tmp = " ";
-    argc = count_args(command_line, tmp);
+    argc = count_args(command_line, " ");
     STACK_DEBUG("# argc = %d\n", argc);
   }
   /* calculate the size needed on our simulated stack */
@@ -152,8 +151,13 @@ void process_init(void)
  * instead. Note however that all cleanup after a process must be done
  * in process_cleanup, and that process_cleanup are already called
  * from thread_exit - do not call cleanup twice! */
-void process_exit(int status UNUSED)
+void process_exit(int status)
 {
+  struct Process *process = process_list_find(&SPL, thread_current()->tid);
+  if (process != NULL)
+  {
+    process->exit_status = status;
+  }
 }
 
 /* Print a list of all running processes. The list shall include all
@@ -189,7 +193,8 @@ int process_execute(const char *command_line)
 
   /* LOCAL variable will cease existence when function return! */
   struct parameters_to_start_process arguments;
-  // Nu behöver vi initera semaphoren
+
+  // Semafor to control start process
   sema_init(&arguments.sema, 0);
 
   debug("%s#%d: process_execute(\"%s\") ENTERED\n",
@@ -205,11 +210,11 @@ int process_execute(const char *command_line)
   arguments.pid = thread_current()->tid;
 
   strlcpy_first_word(debug_name, command_line, 64);
-
   /* SCHEDULES function `start_process' to run (LATER) */
   thread_id = thread_create(debug_name, PRI_DEFAULT,
                             (thread_func *)start_process, &arguments);
 
+  // Process started successfully
   if (thread_id != -1)
   {
     sema_down(&arguments.sema);
@@ -217,7 +222,7 @@ int process_execute(const char *command_line)
 
   if (arguments.init_ok == false)
   {
-    debug("# ====== INIT_OK FALSE\n");
+    debug("====== INIT_OK FALSE ======\n");
     process_id = -1;
   }
   else
@@ -229,13 +234,9 @@ int process_execute(const char *command_line)
   // Om vi tar bort denna så kommer vi få massa konstiga tecken i parameters->command_line när vi freear nedan.
   // power_off();
 
-  // Vi får inte vi släppa command_line innan alla child är döda ??
-  if (process_id != -1)
-  {
-    //sema_down(&arguments.sema);
-  }
-
   /* WHICH thread may still be using this right now? */
+  // avoid to free command_line before all childs are dead
+
   free(arguments.command_line);
 
   debug("%s#%d: process_execute(\"%s\") RETURNS %d\n",
@@ -244,7 +245,6 @@ int process_execute(const char *command_line)
         command_line, process_id);
 
   /* MUST be -1 if `load' in `start_process' return false */
-  debug("# Process_id in process_execute(): %d", process_id);
   return process_id;
 }
 
@@ -292,26 +292,26 @@ start_process(struct parameters_to_start_process *parameters)
        address, the first argument, the second argument etc. */
 
     // Skapa ny process och ge den värden
-    struct Process plist;
-    plist.process_id = thread_current()->tid;
-    plist.process_name = thread_current()->name;
-    plist.parent_id = parameters->pid;
-    plist.exit_status = -1;
-    plist.free = false;
-    plist.process_alive = true;
-    plist.parent_alive = true;
-
-    debug("# ==== ADDING NAME: %s\n", plist.process_name);
+    struct Process *process = malloc(sizeof(struct Process));
+    process->id = thread_current()->tid;
+    strlcpy(process->name, thread_current()->name, 64);
+    process->parent_id = parameters->pid;
+    thread_current()->pid = parameters->pid;
+    process->free = false;
+    process->exit_status = -1;
+    process->alive = true;
+    process->parent_alive = true;
+    sema_init(&process->sema, 0);
     parameters->init_ok = true;
 
-    // Lägg till i processlistan
-    process_list_insert(&SPL, plist);
+    // LOOKUP: how to check if the SPL is full
+    process_list_insert(&SPL, process);
+    process_print_list();
 
-    debug("# ==== PROCESS pid: %d Added to Process List\n", plist.process_id);
-    // TODO: remove print here / TL
-    process_list_print(&SPL);
+    debug("==== PROCESS %s pid: %d Added to process List\n", process->name, process->id);
 
     // HACK if_.esp -= 12; /* Unacceptable solution. */
+    // TODO: Fix command_line after setup_main_stack
     if_.esp = setup_main_stack(parameters->command_line, if_.esp);
 
     /* The stack and stack pointer should be setup correct just before
@@ -320,12 +320,13 @@ start_process(struct parameters_to_start_process *parameters)
 
     // dump_stack ( PHYS_BASE + 15, PHYS_BASE - if_.esp + 16 );
   }
-  sema_up(&parameters->sema);
 
   debug("%s#%d: start_process(\"%s\") DONE\n",
         thread_current()->name,
         thread_current()->tid,
         parameters->command_line);
+
+  sema_up(&parameters->sema);
 
   /* If load fail, quit. Load may fail for several reasons.
      Some simple examples:
@@ -335,7 +336,6 @@ start_process(struct parameters_to_start_process *parameters)
   */
   if (!success)
   {
-    sema_up(&parameters->sema); // new 1/2-18
     thread_exit();
   }
 
@@ -367,16 +367,37 @@ int process_wait(int child_id)
 
   debug("%s#%d: process_wait(%d) ENTERED\n",
         cur->name, cur->tid, child_id);
+
   /* Yes! You need to do something good here ! */
+  struct Process *process = process_list_find(&SPL, child_id);
+  // Check if child doesn't exist in process list. Already terminated
+  if (process == NULL)
+  {
+    return status;
+  }
+
+  // Check if it was not a child of the calling process,
+  if (process != NULL)
+  {
+    struct Process *process_parent = process_list_find(&SPL, process->parent_id);
+    if (process_parent != NULL && process_parent->id != cur->tid)
+    {
+      return status;
+    }
+  }
+  debug("process->PARENT_ID: %i CUR PID: %i, CUR->TID: %i\n", process->parent_id, cur->pid, cur->tid);
+  // Check if process alive and if parent
+  if (!process->free && process->parent_id == cur->tid)
+  {
+    // Wait for process child_id to die
+    sema_down(&process->sema);
+    status = process_list_remove(&SPL, process->id);
+  }
+
   debug("%s#%d: process_wait(%d) RETURNS %d\n",
         cur->name, cur->tid, child_id, status);
 
   return status;
-}
-
-bool process_alive(value_t v)
-{
-  // add logic to check if the process is alive and return true / false
 }
 
 /* Free the current process's resources. This function is called
@@ -400,22 +421,29 @@ void process_cleanup(void)
 
   // remove if exists in filemap
   struct map *m = &cur->file_map;
-
   int mapFound = map_find(&m, cur->tid);
   if (mapFound != -1)
   {
     map_remove_if(m, mapFound, 0);
   }
 
-  // Set exit status
-  struct Process *tmp = process_list_find(&SPL, cur->tid); // check if cur->tid exists in process list
-  if (tmp != NULL)
+  // Set exit status for the process
+  struct Process *process = process_list_find(&SPL, cur->tid);
+  if (process != NULL)
   {
-    if (tmp->process_id != cur->tid)
+    if (!process->free)
     {
-      debug("# tmp->process_id != cur->tid: i (process.c) process_cleanup() tmp->process_id != cur->tid \n");
+      debug("DEBUG #1\n");
+      status = process->exit_status;
+      struct Process *process_parent = process_list_find(&SPL, process->parent_id);
+      if (process_parent != NULL)
+      {
+        debug("DEBUG #2\n");
+
+        process->parent_alive = false;
+        //status = process_list_remove(&SPL, process->id);
+      }
     }
-    status = tmp->exit_status;
   }
 
   /* Later tests DEPEND on this output to work correct. You will have
@@ -427,11 +455,6 @@ void process_cleanup(void)
    */
   printf("%s: exit(%d)\n", thread_name(), status);
 
-  // Remove process of the current thread
-  if (tmp != NULL)
-  {
-    process_list_remove(&SPL, cur->tid);
-  }
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
   if (pd != NULL)
@@ -449,6 +472,13 @@ void process_cleanup(void)
   }
   debug("%s#%d: process_cleanup() DONE with status %d\n",
         cur->name, cur->tid, status);
+
+  if (process != NULL)
+  {
+    process->alive = false;
+    debug("sema_up(&process->sema) process_id: %i\n ", process->id);
+    sema_up(&process->sema);
+  }
 }
 
 /* Sets up the CPU for running user code in the current

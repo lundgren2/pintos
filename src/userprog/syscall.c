@@ -180,6 +180,7 @@ static void syscall_handler(struct intr_frame *f)
   case SYS_EXIT:
     // TODO: process_cleanup: http://www.ida.liu.se/~TDIU16/2017/lab/pdf/17sysexec.pdf
     printf("thread_exit()... %i\n", esp[1]);
+    process_exit((int)FD); // Update exit_status
     thread_exit();
     printf("thread_exit() done...\n");
     break;
@@ -267,6 +268,9 @@ static void syscall_handler(struct intr_frame *f)
     break;
   case SYS_PLIST:
     sys_plist_();
+    break;
+  case SYS_WAIT:
+    f->eax = process_wait((int)FD);
     break;
   default:
     printf("Executed an unknown system call!\n");

@@ -5,24 +5,25 @@
 
 struct Process
 {
-  int process_id;
-  char *process_name;
+  int id;
+  char name[64];
   int parent_id;
   int exit_status;
   bool free;
-  bool process_alive;
+  bool alive;
   bool parent_alive;
+  struct semaphore sema;
 };
 static struct System_process_list
 {
-  struct Process plist_[MAX_PROCESS];
+  struct Process *plist_[MAX_PROCESS];
   struct lock l;
 };
 
 void process_list_init(struct System_process_list *SPL);
-int process_list_insert(struct System_process_list *SPL, struct Process p);
+int process_list_insert(struct System_process_list *SPL, struct Process *p);
 struct Process *process_list_find(struct System_process_list *SPL, int id);
-struct Process *process_list_remove(struct System_process_list *SPL, int id);
+int process_list_remove(struct System_process_list *SPL, int id);
 void process_list_print(struct System_process_list *SPL);
 
 /* Place functions to handle a running process here (process list).
