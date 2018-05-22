@@ -11,7 +11,7 @@
 /* Identifies an inode. */
 #define INODE_MAGIC 0x494e4f44
 
-struct lock inode_lock;
+struct lock inode_list_lock; //lab20
 
 /* On-disk inode.
    Must be exactly DISK_SECTOR_SIZE bytes long. */
@@ -39,8 +39,8 @@ struct inode
   int open_cnt;           /* Number of openers. */
   bool removed;           /* True if deleted, false otherwise. */
   struct inode_disk data; /* Inode content. */
-  struct lock w_lock;     // lab 20
-  struct lock r_lock;
+  struct lock lock;       // lab 20
+  // struct lock r_lock;>
 };
 
 /* Returns the disk sector that contains byte offset POS within
@@ -65,6 +65,7 @@ static struct list open_inodes;
 void inode_init(void)
 {
   list_init(&open_inodes);
+  lock_init(&inode_list_lock);
 }
 
 /* Initializes an inode with LENGTH bytes of data and
@@ -84,6 +85,7 @@ bool inode_create(disk_sector_t sector, off_t length)
   ASSERT(sizeof *disk_inode == DISK_SECTOR_SIZE);
 
   disk_inode = calloc(1, sizeof *disk_inode);
+  // lock_acquire(&inode_list_lock); // lab20
   if (disk_inode != NULL)
   {
     size_t sectors = bytes_to_sectors(length);
@@ -104,6 +106,7 @@ bool inode_create(disk_sector_t sector, off_t length)
     }
     free(disk_inode);
   }
+  // lock_release(% inode_list_lock); // lab20
   return success;
 }
 
@@ -115,7 +118,7 @@ inode_open(disk_sector_t sector)
 {
   struct list_elem *e;
   struct inode *inode;
-
+  lock_acquire(&inode_list_lock); // lab20
   /* Check whether this inode is already open. */
   for (e = list_begin(&open_inodes); e != list_end(&open_inodes);
        e = list_next(e))
@@ -123,7 +126,9 @@ inode_open(disk_sector_t sector)
     inode = list_entry(e, struct inode, elem);
     if (inode->sector == sector)
     {
+      lock_release(&inode_list_lock); // lab20
       inode_reopen(inode);
+      // lock_release(&inode_list_lock); // lab20
       return inode;
     }
   }
@@ -132,6 +137,7 @@ inode_open(disk_sector_t sector)
   inode = malloc(sizeof *inode);
   if (inode == NULL)
   {
+    lock_release(&inode_list_lock); // lab20
     return NULL;
   }
 
@@ -141,9 +147,10 @@ inode_open(disk_sector_t sector)
   inode->sector = sector;
   inode->open_cnt = 1;
   inode->removed = false;
+  lock_init(&inode->lock); // lab20
 
   disk_read(filesys_disk, inode->sector, &inode->data);
-
+  lock_release(&inode_list_lock); // lab20
   return inode;
 }
 
@@ -153,7 +160,9 @@ inode_reopen(struct inode *inode)
 {
   if (inode != NULL)
   {
+    lock_acquire(&inode->lock); // lab20
     inode->open_cnt++;
+    lock_release(&inode->lock); // lab20
   }
   return inode;
 }
@@ -174,10 +183,14 @@ void inode_close(struct inode *inode)
   if (inode == NULL)
     return;
 
+  lock_acquire(&inode->lock);
   /* Release resources if this was the last opener. */
   if (--inode->open_cnt == 0)
   {
+    lock_release(&inode->lock);
+
     /* Remove from inode list. */
+    lock_acquire(&inode_list_lock); // LOCK LIST lab20
     list_remove(&inode->elem);
 
     /* Deallocate blocks if the file is marked as removed. */
@@ -189,6 +202,7 @@ void inode_close(struct inode *inode)
     }
 
     free(inode);
+    lock_release(&inode_list_lock); // RELEASE LIST
     return;
   }
 }
