@@ -293,8 +293,7 @@ start_process(struct parameters_to_start_process *parameters)
 
     // Skapa ny process och ge den värden
     struct Process *process = malloc(sizeof(struct Process));
-    int i = thread_current()->tid;
-    process->id = i;
+    process->id = thread_current()->tid;
     strlcpy(process->name, thread_current()->name, 64);
     process->parent_id = parameters->pid;
     thread_current()->pid = parameters->pid;

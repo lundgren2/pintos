@@ -10,14 +10,10 @@ void process_list_init(struct System_process_list *SPL)
   {
     return -1;
   }
-
   lock_init(&SPL->l);
-  struct Process *process = NULL;
   for (int i = 0; i < MAX_PROCESS; ++i)
   {
-    process = SPL->plist_[i];
-    process->free = true;
-    sema_init(&process->sema, 0);
+    SPL->plist_[i] = NULL;
   }
 }
 
@@ -29,13 +25,11 @@ int process_list_insert(struct System_process_list *SPL, struct Process *p)
     return -1;
   }
   lock_acquire(&SPL->l);
-  struct Process *process = NULL;
   for (int i = 0; i < MAX_PROCESS; ++i)
   {
-    process = SPL->plist_[i];
-    if (process != NULL && process->free)
+    if (SPL->plist_[i] == NULL || SPL->plist_[i]->free)
     {
-      process = p;
+      SPL->plist_[i] = p;
       lock_release(&SPL->l);
       return i;
     }
@@ -50,17 +44,13 @@ struct Process *process_list_find(struct System_process_list *SPL, int id)
   {
     return NULL;
   }
-
   struct Process *process = NULL;
   for (int i = 0; i < MAX_PROCESS; i++)
   {
     process = SPL->plist_[i];
-    if (process != NULL)
+    if (process != NULL && process->id == id)
     {
-      if (process->id == id)
-      {
-        return process;
-      }
+      return process;
     }
   }
   return NULL;
@@ -103,26 +93,19 @@ void process_list_print(struct System_process_list *SPL)
     debug("\n\t\t==== PROCESS LIST ====\n");
     debug("ID\t PARENT ID\t NAME\t\t EXIT_STATUS\n");
 
+    struct Process *process = NULL;
     for (int i = 0; i < MAX_PROCESS; i++)
     {
-      struct Process *process = SPL->plist_[i];
-      if (process == NULL)
+      process = SPL->plist_[i];
+      if (SPL->plist_[i] != NULL)
       {
-        break;
+        debug("%i\t %i\t\t %s\t\t  %i\n",
+              process->id,
+              process->parent_id,
+              process->name,
+              process->exit_status);
       }
-      else if (process->id == 0)
-      {
-        break;
-      }
-
-      debug("%i\t %i\t\t %s\t\t %s\t\t %i \n",
-            process->id,
-            process->parent_id,
-            process->name,
-            process->free ? "FREE" : "BUSY",
-            process->exit_status);
     }
-
     debug("\n");
     lock_release(&SPL->l);
   }
