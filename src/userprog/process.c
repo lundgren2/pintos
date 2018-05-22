@@ -440,11 +440,15 @@ void process_cleanup(void)
   {
     if (!process->free)
     {
+      debug("DEBUG #1\n");
       status = process->exit_status;
       struct Process *process_parent = process_list_find(&SPL, process->parent_id);
       if (process_parent != NULL)
       {
+        debug("DEBUG #2\n");
+
         process->parent_alive = false;
+        //status = process_list_remove(&SPL, process->id);
       }
     }
   }
