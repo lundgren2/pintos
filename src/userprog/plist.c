@@ -84,7 +84,7 @@ void process_list_print(struct System_process_list *SPL)
   if (SPL != NULL)
   {
     lock_acquire(&SPL->l);
-    debug("\n\t\t==== PROCESS LIST ====\n");
+    debug("==== PROCESS LIST ====\n");
     debug("ID\t PARENT ID\t NAME\t\t EXIT_STATUS\n");
 
     struct Process *process = NULL;

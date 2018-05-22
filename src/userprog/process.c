@@ -164,7 +164,7 @@ void process_exit(int status)
  * relevant debug information in a clean, readable format. */
 void process_print_list()
 {
-  process_list_print(&SPL);
+  // process_list_print(&SPL);
 }
 
 struct parameters_to_start_process
@@ -476,7 +476,7 @@ void process_cleanup(void)
   if (process != NULL)
   {
     process->alive = false;
-    debug("sema_up(&process->sema) process_id: %i\n ", process->id);
+    // debug("sema_up(&process->sema) process_id: %i\n", process->id);
     sema_up(&process->sema);
   }
 }

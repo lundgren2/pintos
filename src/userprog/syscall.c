@@ -178,11 +178,9 @@ static void syscall_handler(struct intr_frame *f)
     power_off();
     break;
   case SYS_EXIT:
-    // TODO: process_cleanup: http://www.ida.liu.se/~TDIU16/2017/lab/pdf/17sysexec.pdf
-    printf("thread_exit()... %i\n", esp[1]);
+    // TODO: CHECK kernel addr
     process_exit((int)FD); // Update exit_status
     thread_exit();
-    printf("thread_exit() done...\n");
     break;
 
   case SYS_READ:
@@ -255,7 +253,7 @@ static void syscall_handler(struct intr_frame *f)
     // Check if esp[1] is valid pointer.
     if (cml == NULL)
     {
-      printf("SYS_EXEC: ESP1 fails");
+      // printf("# SYS_EXEC: ESP1 fails");
       f->eax = -1;
       thread_exit();
       break;
@@ -273,10 +271,9 @@ static void syscall_handler(struct intr_frame *f)
     f->eax = process_wait((int)FD);
     break;
   default:
-    printf("Executed an unknown system call!\n");
-
-    printf("Stack top + 0: %d\n", esp[0]);
-    printf("Stack top + 1: %d\n", esp[1]);
+    printf("# Executed an unknown system call!\n");
+    printf("# Stack top + 0: %d\n", esp[0]);
+    printf("# Stack top + 1: %d\n", esp[1]);
 
     thread_exit();
   }
