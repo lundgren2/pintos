@@ -201,7 +201,6 @@ static void syscall_handler(struct intr_frame *f)
     {
       if(!verify_fix_length(buffer, sizeof(buffer))) {
         sys_exit_();
-        break;
       }
 
       if (FD == STDIN_FILENO)
@@ -246,16 +245,24 @@ static void syscall_handler(struct intr_frame *f)
     }
     break;
   case SYS_OPEN: // Open a file
-    f->eax = (int32_t)sys_open_file_((char *)FD);
+   if( (char*)esp[1] == NULL || !verify_variable_length(esp[1])) {
+      sys_exit_();
+      break;
+    } 
+    f->eax = (int32_t)sys_open_file_(cml);
     break;
   case SYS_CLOSE:
     map_remove(&t->file_map, FD);
     break;
   case SYS_REMOVE:
-    f->eax = (int32_t)filesys_remove((char *)FD);
+    // if(cml == NULL || !verify_variable_length(FD)) {
+    //   f->eax = 0;
+    //   break;
+    // }
+    f->eax = (int32_t)filesys_remove(cml);
     break;
   case SYS_CREATE:
-    f->eax = (int32_t)filesys_create((char *)FD, (off_t)buffer);
+    f->eax = (int32_t)filesys_create(cml, (off_t)buffer);
     break;
   case SYS_SEEK:
     sys_seek_((int)FD, (unsigned)buffer);
@@ -328,7 +335,6 @@ bool verify_fix_length(void *start, int length)
  * the address first containg a null-character ('\0'). (The way
  * C-strings are stored.)
  */
-// Check: test
 bool verify_variable_length(char *start)
 {
   bool check = pagedir_get_page(thread_current()->pagedir, (void *)start) == NULL;
@@ -339,8 +345,8 @@ bool verify_variable_length(char *start)
   else
   {
     char *addr = start;
-    int pagenum = pg_no(start);
-    int prevpage;
+    unsigned pagenum = pg_no(start);
+    unsigned prevpage;
     while (true)
     {
       prevpage = pg_no(addr);
@@ -351,9 +357,9 @@ bool verify_variable_length(char *start)
         {
           return false;
         }
-        prevpage = pg_no(pagenum);
+        prevpage = pg_no(addr);
       }
-      if (addr == '\0') // is_end_of_string
+      if (*addr == '\0') // is_end_of_string
       {
         return true;
       }

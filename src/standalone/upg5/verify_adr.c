@@ -45,7 +45,6 @@ bool verify_fix_length(void *start, int length)
  * the address first containg a null-character ('\0'). (The way
  * C-strings are stored.)
  */
-// Check: test
 bool verify_variable_length(char *start)
 {
   bool check = pagedir_get_page(thread_current()->pagedir, (void *)start) == NULL;
@@ -56,8 +55,8 @@ bool verify_variable_length(char *start)
   else
   {
     char *addr = start;
-    int pagenum = pg_no(start);
-    int prevpage;
+    unsigned pagenum = pg_no(start);
+    unsigned prevpage;
     while (true)
     {
       prevpage = pg_no(addr);
@@ -70,7 +69,7 @@ bool verify_variable_length(char *start)
         }
         prevpage = pg_no(pagenum);
       }
-      if (is_end_of_string(addr))
+      if (*addr == '\0') // is_end_of_string
       {
         return true;
       }
@@ -78,6 +77,7 @@ bool verify_variable_length(char *start)
     }
   }
 }
+
 
 /* Definition of test cases. */
 struct test_case_t
