@@ -164,6 +164,12 @@ void sys_plist_(void)
   process_print_list();
 }
 
+void sys_exit_(void)
+{
+  process_exit(-1);
+  thread_exit();
+}
+
 static void syscall_handler(struct intr_frame *f)
 {
   int32_t *esp = (int32_t *)f->esp;
@@ -172,6 +178,12 @@ static void syscall_handler(struct intr_frame *f)
   int32_t len = (int32_t)esp[3];
   char *cml = (char *)esp[1];
   struct thread *t = thread_current();
+
+  if(esp == NULL || !verify_fix_length(esp, sizeof(esp))) {
+    process_exit(-1);
+    thread_exit();
+  }
+
   switch (*esp /* retrive syscall number */)
   {
 
@@ -187,6 +199,11 @@ static void syscall_handler(struct intr_frame *f)
   case SYS_READ:
     if (FD != STDOUT_FILENO)
     {
+      if(!verify_fix_length(buffer, sizeof(buffer))) {
+        sys_exit_();
+        break;
+      }
+
       if (FD == STDIN_FILENO)
       {
         int32_t nr_bytes = sys_keyboard_read_((char *)FD, (char *)buffer, (unsigned)len);
@@ -206,13 +223,19 @@ static void syscall_handler(struct intr_frame *f)
   case SYS_WRITE:
     if (FD != STDIN_FILENO)
     {
+      if(!verify_fix_length(buffer, sizeof(buffer))) {
+        sys_exit_();
+        f->eax = -1;
+        break;
+      }
+
       if (FD == STDOUT_FILENO)
       {
         int32_t nr_bytes = sys_console_write_((char *)FD, (char *)buffer, (unsigned)len);
         f->eax = nr_bytes;
       }
       else
-      { //Hantera file istället
+      { // Hantera file istället
         int32_t nr_bytes = sys_write_(FD, (char *)buffer, (unsigned)len);
         f->eax = nr_bytes;
       }
@@ -222,7 +245,7 @@ static void syscall_handler(struct intr_frame *f)
       f->eax = -1;
     }
     break;
-  case SYS_OPEN: //Open a file
+  case SYS_OPEN: // Open a file
     f->eax = (int32_t)sys_open_file_((char *)FD);
     break;
   case SYS_CLOSE:

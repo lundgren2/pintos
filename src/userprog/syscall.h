@@ -8,5 +8,6 @@ unsigned sys_filesize_(int FD);
 unsigned sys_tell_(int FD);
 bool verify_fix_length(void *start, int length); // lab19/lab5
 bool verify_variable_length(char *start);        // lab19/lab5
+void sys_exit_(void); // lab19
 
 #endif /* userprog/syscall.h */
