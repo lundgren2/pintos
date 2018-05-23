@@ -45,6 +45,13 @@ const int argc[] = {
     2, 1, 1, 1, 2, 1, 1,
     /* extended */
     0};
+
+void sys_exit_(void)
+{
+  process_exit(-1);
+  thread_exit();
+}
+
 static int32_t sys_read_(int32_t FD, char *buf, const unsigned size)
 {
   struct thread *tr = thread_current();
@@ -172,6 +179,15 @@ static void syscall_handler(struct intr_frame *f)
   int32_t len = (int32_t)esp[3];
   char *cml = (char *)esp[1];
   struct thread *t = thread_current();
+
+  // exit if we can't verify lenght of stack pointer
+  if (!verify_fix_length(esp, sizeof(esp)))
+  {
+    process_exit(-1);
+    thread_exit();
+  }
+
+
   switch (*esp /* retrive syscall number */)
   {
 
@@ -179,23 +195,30 @@ static void syscall_handler(struct intr_frame *f)
     power_off();
     break;
   case SYS_EXIT:
-    // TODO: CHECK kernel addr
-    process_exit((int)FD); // Update exit_status
-    thread_exit();
+    f->eax = -1;
+    sys_exit_();
     break;
 
   case SYS_READ:
     if (FD != STDOUT_FILENO)
     {
-      if (FD == STDIN_FILENO)
+      if (verify_fix_length(buffer, sizeof(buffer)))
       {
-        int32_t nr_bytes = sys_keyboard_read_((char *)FD, (char *)buffer, (unsigned)len);
-        f->eax = nr_bytes;
+        if (FD == STDIN_FILENO)
+        {
+          int32_t nr_bytes = sys_keyboard_read_((char *)FD, (char *)buffer, (unsigned)len);
+          f->eax = nr_bytes;
+        }
+        else
+        { // om file
+          int32_t nr_bytes = sys_read_(FD, (char *)buffer, (unsigned)len);
+          f->eax = nr_bytes;
+        }
       }
       else
-      { // om file
-        int32_t nr_bytes = sys_read_(FD, (char *)buffer, (unsigned)len);
-        f->eax = nr_bytes;
+      {
+        f->eax = -1;
+        sys_exit_();
       }
     }
     else
@@ -206,15 +229,23 @@ static void syscall_handler(struct intr_frame *f)
   case SYS_WRITE:
     if (FD != STDIN_FILENO)
     {
-      if (FD == STDOUT_FILENO)
+      if (verify_fix_length(buffer, sizeof(buffer)))
       {
-        int32_t nr_bytes = sys_console_write_((char *)FD, (char *)buffer, (unsigned)len);
-        f->eax = nr_bytes;
+        if (FD == STDOUT_FILENO)
+        {
+          int32_t nr_bytes = sys_console_write_((char *)FD, (char *)buffer, (unsigned)len);
+          f->eax = nr_bytes;
+        }
+        else
+        { //Hantera file istället
+          int32_t nr_bytes = sys_write_(FD, (char *)buffer, (unsigned)len);
+          f->eax = nr_bytes;
+        }
       }
       else
-      { //Hantera file istället
-        int32_t nr_bytes = sys_write_(FD, (char *)buffer, (unsigned)len);
-        f->eax = nr_bytes;
+      {
+        f->eax = -1;
+        sys_exit_();
       }
     }
     else
@@ -223,16 +254,40 @@ static void syscall_handler(struct intr_frame *f)
     }
     break;
   case SYS_OPEN: //Open a file
-    f->eax = (int32_t)sys_open_file_((char *)FD);
+    if (FD != NULL && verify_variable_length((char *)FD))
+    {
+      f->eax = (int32_t)sys_open_file_((char *)FD);
+    }
+    else
+    {
+      f->eax = -1;
+      sys_exit_();
+    }
     break;
   case SYS_CLOSE:
     map_remove(&t->file_map, FD);
     break;
   case SYS_REMOVE:
-    f->eax = (int32_t)filesys_remove((char *)FD);
+    if (FD != NULL && verify_variable_length((char *)FD))
+    {
+      f->eax = (int32_t)filesys_remove((char *)FD);
+    }
+    else
+    {
+      f->eax = -1;
+      sys_exit_();
+    }
     break;
   case SYS_CREATE:
-    f->eax = (int32_t)filesys_create((char *)FD, (off_t)buffer);
+    if (FD != NULL && verify_variable_length((char *)FD))
+    {
+      f->eax = (int32_t)filesys_create((char *)FD, (off_t)buffer);
+    }
+    else
+    {
+      f->eax = -1;
+      sys_exit_();
+    }
     break;
   case SYS_SEEK:
     sys_seek_((int)FD, (unsigned)buffer);
@@ -252,11 +307,10 @@ static void syscall_handler(struct intr_frame *f)
       till sin förälderprocess eller tvärtom (jämför med vad du gjorde i uppgift 10). */
 
     // Check if esp[1] is valid pointer.
-    if (cml == NULL)
+    if (cml == NULL || !verify_variable_length((char *)FD))
     {
-      // printf("# SYS_EXEC: ESP1 fails");
       f->eax = -1;
-      thread_exit();
+      sys_exit_();
       break;
     }
     uint32_t id = process_execute(cml);
