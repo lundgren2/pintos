@@ -279,3 +279,62 @@ static void syscall_handler(struct intr_frame *f)
     thread_exit();
   }
 }
+
+/* Verify all addresses from and including 'start' up to but excluding
+ * (start+length). */
+bool verify_fix_length(void *start, int length)
+{
+  char *addr = (char *)pg_round_down(start);
+  char *end_addr = (char *)(start + length);
+  while (addr < end_addr)
+  {
+    bool check = pagedir_get_page(thread_current()->pagedir, (void *)addr) == NULL;
+    if (check)
+    {
+      return false;
+    }
+    else
+    {
+      addr = addr + PGSIZE;
+    }
+  }
+  return true; // If no problems return true
+}
+
+/* Verify all addresses from and including 'start' up to and including
+ * the address first containg a null-character ('\0'). (The way
+ * C-strings are stored.)
+ */
+// Check: test
+bool verify_variable_length(char *start)
+{
+  bool check = pagedir_get_page(thread_current()->pagedir, (void *)start) == NULL;
+  if (check)
+  {
+    return false;
+  }
+  else
+  {
+    char *addr = start;
+    int pagenum = pg_no(start);
+    int prevpage;
+    while (true)
+    {
+      prevpage = pg_no(addr);
+      if (pagenum != prevpage)
+      {
+        bool addr_check = pagedir_get_page(thread_current()->pagedir, (void *)addr) == NULL;
+        if (addr_check)
+        {
+          return false;
+        }
+        prevpage = pg_no(pagenum);
+      }
+      if (addr == '\0') // is_end_of_string
+      {
+        return true;
+      }
+      addr++;
+    }
+  }
+}
