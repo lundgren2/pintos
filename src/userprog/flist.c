@@ -40,6 +40,9 @@ value_t map_find(struct map *m, key_t k)
 
 value_t map_remove(struct map *m, key_t k)
 {
+  if(k > MAP_SIZE) {
+    return NULL;
+  }
   value_t tmp = m->content[k - 2];
   m->content[k - 2] = NULL;
   return tmp;

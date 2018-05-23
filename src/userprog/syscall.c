@@ -175,7 +175,8 @@ static void syscall_handler(struct intr_frame *f)
   int32_t *esp = (int32_t *)f->esp;
   int32_t FD = (int32_t)esp[1];
   int32_t buffer = (int32_t)esp[2];
-  int32_t len = (int32_t)esp[3];
+  unsigned len = (unsigned int)esp[3];
+  
   char *cml = (char *)esp[1];
   struct thread *t = thread_current();
 
