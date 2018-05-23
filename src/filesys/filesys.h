@@ -20,4 +20,6 @@ bool filesys_remove (const char *name);
 struct file *filesys_open (const char *name);
 void         filesys_close (struct file *file);
 
+void directory_init(void); //lab20
+
 #endif /* filesys/filesys.h */

@@ -33,6 +33,7 @@
 #include "devices/disk.h"
 #include "filesys/filesys.h"
 #include "filesys/fsutil.h"
+#include "filesys/directory.h"
 #endif
 
 /* Amount of physical memory, in 4 kB pages. */
@@ -118,6 +119,7 @@ main (void)
 #ifdef USERPROG
   exception_init ();
   syscall_init ();
+  directory_init(); // lab20
 #endif
 
   /* Start thread scheduler and enable interrupts. */

@@ -8,10 +8,12 @@
 
 #include "threads/synch.h" // lab20
 
-// void directory_init()
-// {
-//   lock_init(&directory_lock);
-// }
+// struct lock directory_lock;
+void directory_init(void)
+{
+  // lock_init(&dir->l);
+}
+
 // TODO: CHECK SYNC
 /* A directory. */
 struct dir
@@ -153,11 +155,14 @@ bool dir_add(struct dir *dir, const char *name, disk_sector_t inode_sector)
   ASSERT(dir != NULL);
   ASSERT(name != NULL);
 
-  /* Check NAME for validity. */
-  if (*name == '\0' || strlen(name) > NAME_MAX)
-    return false;
-
   lock_acquire(&dir->l); // lab20
+  
+  /* Check NAME for validity. */
+  if (*name == '\0' || strlen(name) > NAME_MAX) {
+    lock_release(&dir->l); // lab20
+    return false;
+  }
+
   /* Check that NAME is not in use. */
   if (lookup(dir, name, NULL, NULL))
     goto done;
