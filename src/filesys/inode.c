@@ -39,8 +39,10 @@ struct inode
   int open_cnt;           /* Number of openers. */
   bool removed;           /* True if deleted, false otherwise. */
   struct inode_disk data; /* Inode content. */
-  struct lock lock;       // lab 20
-  // struct lock r_lock;>
+  struct lock lock;       // lab20
+  struct semaphore sema;  // lab21
+  int queue_cnt;          // lab21
+  struct lock queue_lock; // lab21
 };
 
 /* Returns the disk sector that contains byte offset POS within
@@ -85,7 +87,7 @@ bool inode_create(disk_sector_t sector, off_t length)
   ASSERT(sizeof *disk_inode == DISK_SECTOR_SIZE);
 
   disk_inode = calloc(1, sizeof *disk_inode);
-  // lock_acquire(&inode_list_lock); // lab20
+  lock_acquire(&inode_list_lock); // lab20
   if (disk_inode != NULL)
   {
     size_t sectors = bytes_to_sectors(length);
@@ -106,7 +108,7 @@ bool inode_create(disk_sector_t sector, off_t length)
     }
     free(disk_inode);
   }
-  // lock_release(% inode_list_lock); // lab20
+  lock_release(&inode_list_lock); // lab20
   return success;
 }
 
@@ -147,7 +149,10 @@ inode_open(disk_sector_t sector)
   inode->sector = sector;
   inode->open_cnt = 1;
   inode->removed = false;
-  lock_init(&inode->lock); // lab20
+  lock_init(&inode->lock);       // lab20
+  lock_init(&inode->queue_lock); // lab21
+  sema_init(&inode->sema, 1);    // lab21
+  inode->queue_cnt = 0;          // lab21
 
   disk_read(filesys_disk, inode->sector, &inode->data);
   lock_release(&inode_list_lock); // lab20
@@ -226,6 +231,17 @@ off_t inode_read_at(struct inode *inode, void *buffer_, off_t size, off_t offset
   off_t bytes_read = 0;
   uint8_t *bounce = NULL;
 
+  // lab21 read queue increase reader
+  lock_acquire(&inode->lock);
+  lock_acquire(&inode->queue_lock);
+  inode->queue_cnt++;        // increase queue counter
+  if (inode->queue_cnt == 1) // check if only first to matk as busy
+  {
+    sema_down(&inode->sema); // mark as busy
+  }
+  lock_release(&inode->queue_lock);
+  lock_release(&inode->lock);
+
   while (size > 0)
   {
     /* Disk sector to read, starting byte offset within sector. */
@@ -268,6 +284,17 @@ off_t inode_read_at(struct inode *inode, void *buffer_, off_t size, off_t offset
   }
   free(bounce);
 
+  // lab21 read queue decrease reader
+  lock_acquire(&inode->lock);
+  lock_acquire(&inode->queue_lock);
+  inode->queue_cnt--;
+  if (inode->queue_cnt == 0) // Accept writer if 0 readers
+  {
+    sema_up(&inode->sema); // mark as free
+  }
+  lock_release(&inode->queue_lock);
+  lock_release(&inode->lock);
+
   return bytes_read;
 }
 
@@ -282,6 +309,8 @@ off_t inode_write_at(struct inode *inode, const void *buffer_, off_t size,
   const uint8_t *buffer = buffer_;
   off_t bytes_written = 0;
   uint8_t *bounce = NULL;
+
+  sema_down(&inode->sema); // check if correct
 
   while (size > 0)
   {
@@ -332,6 +361,7 @@ off_t inode_write_at(struct inode *inode, const void *buffer_, off_t size,
   }
   free(bounce);
 
+  sema_up(&inode->sema); // lab21
   return bytes_written;
 }
 

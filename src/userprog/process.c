@@ -312,9 +312,9 @@ start_process(struct parameters_to_start_process *parameters)
 
     // LOOKUP: how to check if the SPL is full
     process_list_insert(&SPL, process);
-    process_print_list();
+    // process_print_list();
 
-    debug("==== PROCESS %s pid: %d Added to process List\n", process->name, process->id);
+    // debug("==== PROCESS %s pid: %d Added to process List\n", process->name, process->id);
 
     // HACK if_.esp -= 12; /* Unacceptable solution. */
     // TODO: Fix command_line after setup_main_stack
@@ -391,7 +391,7 @@ int process_wait(int child_id)
       return status;
     }
   }
-  debug("process->PARENT_ID: %i CUR PID: %i, CUR->TID: %i\n", process->parent_id, cur->pid, cur->tid);
+  // debug("process->PARENT_ID: %i CUR PID: %i, CUR->TID: %i\n", process->parent_id, cur->pid, cur->tid);
   // Check if process alive and if parent
   if (!process->free && process->parent_id == cur->tid)
   {
