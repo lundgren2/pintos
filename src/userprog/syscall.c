@@ -262,6 +262,10 @@ static void syscall_handler(struct intr_frame *f)
     f->eax = (int32_t)filesys_remove(cml);
     break;
   case SYS_CREATE:
+    if (cml == NULL || !verify_variable_length(cml)) 
+    {
+      sys_exit_();
+    }
     f->eax = (int32_t)filesys_create(cml, (off_t)buffer);
     break;
   case SYS_SEEK:
