@@ -199,7 +199,7 @@ static void syscall_handler(struct intr_frame *f)
   case SYS_READ:
     if (FD != STDOUT_FILENO)
     {
-      if(!verify_fix_length(buffer, sizeof(buffer))) {
+      if(cml == NULL || !verify_fix_length(buffer, len)) {
         sys_exit_();
       }
 
@@ -302,6 +302,9 @@ static void syscall_handler(struct intr_frame *f)
     sys_plist_();
     break;
   case SYS_WAIT:
+    if(is_kernel_vaddr(cml)) {
+      break;
+    }
     f->eax = process_wait((int)FD);
     break;
   default:
