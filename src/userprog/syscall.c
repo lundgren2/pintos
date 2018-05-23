@@ -245,7 +245,7 @@ static void syscall_handler(struct intr_frame *f)
     }
     break;
   case SYS_OPEN: // Open a file
-   if( (char*)esp[1] == NULL || !verify_variable_length(esp[1])) {
+   if( cml == NULL || !verify_variable_length(cml)) {
       sys_exit_();
       break;
     } 
@@ -255,10 +255,10 @@ static void syscall_handler(struct intr_frame *f)
     map_remove(&t->file_map, FD);
     break;
   case SYS_REMOVE:
-    // if(cml == NULL || !verify_variable_length(FD)) {
-    //   f->eax = 0;
-    //   break;
-    // }
+    if(cml == NULL || !verify_variable_length(cml)) {
+      f->eax = 0;
+      break;
+    }
     f->eax = (int32_t)filesys_remove(cml);
     break;
   case SYS_CREATE:
@@ -282,9 +282,8 @@ static void syscall_handler(struct intr_frame *f)
       till sin förälderprocess eller tvärtom (jämför med vad du gjorde i uppgift 10). */
 
     // Check if esp[1] is valid pointer.
-    if (cml == NULL)
+    if (cml == NULL || !verify_variable_length(cml))
     {
-      // printf("# SYS_EXEC: ESP1 fails");
       f->eax = -1;
       thread_exit();
       break;
