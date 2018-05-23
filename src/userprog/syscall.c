@@ -179,7 +179,7 @@ static void syscall_handler(struct intr_frame *f)
   char *cml = (char *)esp[1];
   struct thread *t = thread_current();
 
-  if(esp == NULL || !verify_fix_length(esp, sizeof(esp))) {
+  if(esp == NULL || is_kernel_vaddr(FD) || !verify_fix_length(esp, sizeof(esp))) {
     process_exit(-1);
     thread_exit();
   }
@@ -199,7 +199,7 @@ static void syscall_handler(struct intr_frame *f)
   case SYS_READ:
     if (FD != STDOUT_FILENO)
     {
-      if(cml == NULL || !verify_fix_length(buffer, len)) {
+      if(cml == NULL || is_kernel_vaddr(esp[1]) || is_kernel_vaddr(len) || !verify_fix_length(buffer, len)) {
         sys_exit_();
       }
 
@@ -222,7 +222,7 @@ static void syscall_handler(struct intr_frame *f)
   case SYS_WRITE:
     if (FD != STDIN_FILENO)
     {
-      if(!verify_fix_length(buffer, sizeof(buffer))) {
+      if(cml == NULL || is_kernel_vaddr(esp[1]) || is_kernel_vaddr(len) || !verify_fix_length(buffer, len)) {
         sys_exit_();
         f->eax = -1;
         break;
@@ -252,6 +252,9 @@ static void syscall_handler(struct intr_frame *f)
     f->eax = (int32_t)sys_open_file_(cml);
     break;
   case SYS_CLOSE:
+    if (is_kernel_vaddr(esp[1])) {
+      break;
+    }
     map_remove(&t->file_map, FD);
     break;
   case SYS_REMOVE:
@@ -286,7 +289,7 @@ static void syscall_handler(struct intr_frame *f)
       till sin förälderprocess eller tvärtom (jämför med vad du gjorde i uppgift 10). */
 
     // Check if esp[1] is valid pointer.
-    if (cml == NULL || !verify_variable_length(cml))
+    if (cml == NULL || is_kernel_vaddr(esp[1]) || !verify_variable_length(cml))
     {
       f->eax = -1;
       thread_exit();

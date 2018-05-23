@@ -28,6 +28,9 @@ key_t map_insert(struct map *m, value_t v)
 
 value_t map_find(struct map *m, key_t k)
 {
+  if(k > MAP_SIZE) {
+    return -1;
+  }
   if (m->content[k - 2] == NULL)
   {
     return -1;
