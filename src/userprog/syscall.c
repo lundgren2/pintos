@@ -185,6 +185,7 @@ static void syscall_handler(struct intr_frame *f)
     thread_exit();
   }
 
+
   switch (*esp /* retrive syscall number */)
   {
 
@@ -192,7 +193,6 @@ static void syscall_handler(struct intr_frame *f)
     power_off();
     break;
   case SYS_EXIT:
-    // TODO: CHECK kernel addr
     process_exit((int)FD); // Update exit_status
     thread_exit();
     break;

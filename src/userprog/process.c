@@ -312,12 +312,10 @@ start_process(struct parameters_to_start_process *parameters)
 
     // LOOKUP: how to check if the SPL is full
     process_list_insert(&SPL, process);
-    // process_print_list();
 
     // debug("==== PROCESS %s pid: %d Added to process List\n", process->name, process->id);
 
     // HACK if_.esp -= 12; /* Unacceptable solution. */
-    // TODO: Fix command_line after setup_main_stack
     if_.esp = setup_main_stack(parameters->command_line, if_.esp);
 
     /* The stack and stack pointer should be setup correct just before
