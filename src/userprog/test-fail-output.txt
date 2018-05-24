@@ -1,0 +1,51 @@
+cat build/tests/filst/sc-bad-write.allput build/tests/filst/sc-bad-write.allput.1
+cat build/tests/userprog/sc-bad-sp.allput build/tests/userprog/sc-bad-sp.allput.1
+cat build/tests/userprog/wait-killed.allput build/tests/userprog/wait-killed.allput.1
+backtrace  0xc0107220 0xc010a488 0xc010a522 0xc010181d 0xc0101963 0xc010a9e2 0xc010181d 0xc0101963 0x8048102 0x8048147 0x80486dd.
+backtrace  0xc0107220 0xc010a488 0xc010a522 0xc010181d 0xc0101963 0xc010a9ca 0xc010181d 0xc0101963 0x80480a1 0x80480e1 0x8048677.
+backtrace  0xc0107220 0xc010a488 0xc010a522 0xc010181d 0xc0101963 0xc010a9ca 0xc010181d 0xc0101963 0x80480a1 0x80480e1 0x8048677.
+
+
+output:
+
+0xc0107220: debug_panic (.../../lib/kernel/debug.c:34)
+0xc010a488: kill (.../userprog/exception.c:105)
+0xc010a522: exception_init (..../userprog/exception.c:31)
+0xc010181d: intr_handler (..../threads/interrupt.c:361)
+0xc0101963: intr_entry (threads/intr-stubs.S:38)
+0xc010a9e2: syscall_handler (...../userprog/syscall.c:193)
+0xc010181d: intr_handler (..../threads/interrupt.c:361)
+0xc0101963: intr_entry (threads/intr-stubs.S:38)
+0x08048102: (unknown)
+0x08048147: (unknown)
+0x080486dd: (unknown)
+toblu933@parlomba3:userprog$ backtrace  0xc0107220 0xc010a488 0xc010a522 0xc010181d 0xc0101963 0xc010a9ca 0xc010181d 0xc0101963 0x80480a1 0x80480e1 0x8048677.
+0xc0107220: debug_panic (.../../lib/kernel/debug.c:34)
+0xc010a488: kill (.../userprog/exception.c:105)
+0xc010a522: exception_init (..../userprog/exception.c:31)
+0xc010181d: intr_handler (..../threads/interrupt.c:361)
+0xc0101963: intr_entry (threads/intr-stubs.S:38)
+0xc010a9ca: syscall_handler (...../userprog/syscall.c:185)
+0xc010181d: intr_handler (..../threads/interrupt.c:361)
+0xc0101963: intr_entry (threads/intr-stubs.S:38)
+0x080480a1: (unknown)
+0x080480e1: (unknown)
+0x08048677: (unknown)
+toblu933@parlomba3:userprog$ backtrace  0xc0107220 0xc010a488 0xc010a522 0xc010181d 0xc0101963 0xc010a9ca 0xc010181d 0xc0101963 0x80480a1 0x80480e1 0x8048677.
+0xc0107220: debug_panic (.../../lib/kernel/debug.c:34)
+0xc010a488: kill (.../userprog/exception.c:105)
+0xc010a522: exception_init (..../userprog/exception.c:31)
+0xc010181d: intr_handler (..../threads/interrupt.c:361)
+0xc0101963: intr_entry (threads/intr-stubs.S:38)
+0xc010a9ca: syscall_handler (...../userprog/syscall.c:185)
+0xc010181d: intr_handler (..../threads/interrupt.c:361)
+0xc0101963: intr_entry (threads/intr-stubs.S:38)
+0x080480a1: (unknown)
+0x080480e1: (unknown)
+0x08048677: (unknown)
+toblu933@parlomba3:userprog$ 
+
+
+
+
+

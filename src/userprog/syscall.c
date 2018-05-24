@@ -177,12 +177,17 @@ static void syscall_handler(struct intr_frame *f)
 
   struct thread *t = thread_current();
 
+if(!verify_fix_length(esp, sizeof(esp))) {
+    process_exit(-1);
+    thread_exit();
+  }
+  
   if(esp == NULL ) {
     process_exit(-1);
     thread_exit();
   }
 
-  if(is_kernel_vaddr(esp[1])) {
+  if(is_kernel_vaddr(esp[1])) { // sc-bad-sp and wait-killed fails
     process_exit(-1);
     thread_exit();
   }
@@ -190,16 +195,13 @@ static void syscall_handler(struct intr_frame *f)
     process_exit(-1);
     thread_exit();
   }
-  if(is_kernel_vaddr(esp[3])) {
+  if(is_kernel_vaddr(esp[3])) { // sc-bad-write fails
     process_exit(-1);
     thread_exit();
   }
 
   
-  if(!verify_fix_length(esp, sizeof(esp))) {
-    process_exit(-1);
-    thread_exit();
-  }
+  
 
 
 
