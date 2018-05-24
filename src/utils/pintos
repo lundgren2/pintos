@@ -484,10 +484,13 @@ sub run_qemu {
     my (@cmd) = ('qemu-system-i386'); # klaar@ida 2015-02-13
 
     for my $iface (0...3) {
+	# filst@ida 2018-04-18:
+	# Use -drive file=<file>,index=<index>,format=raw to avoid warnings on newer Qemu
 	my ($option) = ('-hda', '-hdb', '-hdc', '-hdd')[$iface];
-	push (@cmd, $option, $disks_by_iface[$iface]{FILE_NAME})
+	push (@cmd, '-drive', "file=" . $disks_by_iface[$iface]{FILE_NAME} . ",index=$iface,format=raw")
 	  if defined $disks_by_iface[$iface]{FILE_NAME};
     }
+
     # klaar@ida 2015-03-18:
     # '-p' is not supported on modern qemu
     # '-s' is default for '-gdb tcp:1234' on modern qemu
@@ -504,7 +507,23 @@ sub run_qemu {
 #    push (@cmd, '-s', '-S') if $debug eq 'gdb'; # replaced by above
     push (@cmd, '-monitor', 'null') if $vga eq 'none' && $debug eq 'none';
     push (@cmd, '-nographic') if $vga eq 'none';
-    run_command (@cmd);
+
+    # Insert a device that lets us shutdown Pintos. See https://wiki.osdev.org/Shutdown for details
+    push (@cmd, '-device', 'isa-debug-exit,iobase=0xf4,iosize=0x04');
+
+    # When using isa-debug-exit, we can not exit QEMU cleanly. We exit with 0x30, which will make QEMU exit
+    # with the code 0x30*2 + 1 = 97, and therefore we treat 97 as success as well.
+    print join (' ', @cmd), "\n";
+    my ($exit) = xsystem (@cmd);
+    if (WIFEXITED($exit)) {
+	$exit = WEXITSTATUS($exit);
+	if ($exit == 97) {
+	    # We use this code to exit cleanly from within Pintos (see https://wiki.osdev.org/Shutdown)
+	    # since we can not exit with code 0 using the debug shutdown device in QEMU.
+	    $exit = 0;
+	}
+    }
+    die "command failed\n" if $exit;
 }
 
 # player_unsup($flag)
@@ -867,7 +886,7 @@ sub get_load_average {
 # Calls setitimer to set a timeout, then execs what was passed to us.
 sub exec_setitimer {
     if (defined $timeout) {
-	if ($ ge 5.8.0) {
+	if ($^V ge 5.8.0) {
 	    eval "
               use Time::HiRes qw(setitimer ITIMER_VIRTUAL);
               setitimer (ITIMER_VIRTUAL, $timeout, 0);

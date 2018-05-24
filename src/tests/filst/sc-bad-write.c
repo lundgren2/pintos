@@ -23,6 +23,12 @@ static inline void *pg_round_up (const void *va) {
  */
 extern int _end_bss;
 
+/**
+ * String constants used in the asm blocks.
+ */
+const char *WORKS = "WORKS\n";
+const char *FAIL = "FAIL\n";
+
 void test_main(void)
 {
 	// Get the addres of the first unmapped page in the system.
@@ -38,14 +44,14 @@ void test_main(void)
 		"movl %1, (%%esp);"     // Try to call SYS_WRITE
 		"movl %2, 4(%%esp);"    // Write to STDOUT
 		"movl %3, 8(%%esp);"    // Load buffer.
-		"movl $6, 12(%%esp);"   // Write length of string
+		"movl $6, 12(%%esp);"    // Write length of string
 		"int $0x30;"
 		"movl %%edi, %%esp;"    // Restore esp.
 		:
 		: "r" (base),
 		  "i" (SYS_WRITE),
 		  "i" (STDOUT_FILENO),
-		  "i" ("WORKS\n")
+		  "r" (WORKS)
 		: "%esp", "%eax", "%edi");
 
 
@@ -59,14 +65,14 @@ void test_main(void)
 		"movl %1, (%%esp);"     // Try to call SYS_WRITE
 		"movl %2, 4(%%esp);"    // Write to STDOUT
 		"movl %3, 8(%%esp);"    // Load buffer.
-		//"movl $6, 12(%%esp);" // Can not write the last parameter as we would get a pagefault.
+		//"movl $5, 12(%%esp);" // Can not write the last parameter as we would get a pagefault.
 		"int $0x30;"
 		"movl %%edi, %%esp;"    // Restore esp in case we do not crash (as we should).
 		:
 		: "r" (base),
 		  "i" (SYS_WRITE),
 		  "i" (STDOUT_FILENO),
-		  "i" ("FAIL!\n")
+		  "r" (FAIL)
 		: "%esp", "%eax", "%edi");
 
 	fail("should have died.");

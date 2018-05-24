@@ -412,9 +412,15 @@ hard_power_off (void)
      ACPI shutdown should use:
      outw(PM1a_CNT, SLP_TYPa | SLP_EN );
      Gathering of the corect values for the parameters is not easy.
-     This works for QEMU and Bochs. It's not portable.
+     This works for QEMU and Bochs. It's not portable (and does not work in the latest QEMU).
   */
   outw(0xB004, 0x2000);
+
+  /* Even more recent versions of QEMU needs other measures for shutdown.
+   * See: https://wiki.osdev.org/Shutdown
+   * Exit code is the value to outb * 2 + 1, so we can not exit cleanly...
+   */
+  outb(0xF4, 0x30);
 
   /* This is APM Shutdown */
   for (p = s; *p != '\0'; p++)
