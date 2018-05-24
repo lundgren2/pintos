@@ -14,6 +14,7 @@ void map_init(struct map *m)
 
 key_t map_insert(struct map *m, value_t v)
 {
+
   for (int i = 0; i < MAP_SIZE; i++)
   {
     if (m->content[i] == NULL)
@@ -22,7 +23,7 @@ key_t map_insert(struct map *m, value_t v)
       return i + 2;
     }
   }
-  free(v); // remove pointer to uninserted file
+  // free(v); // remove pointer to uninserted file
   return -1;
 }
 

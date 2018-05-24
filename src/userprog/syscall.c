@@ -173,18 +173,19 @@ void sys_exit_(void)
 static void syscall_handler(struct intr_frame *f)
 {
   int32_t *esp = (int32_t *)f->esp;
-  int32_t FD = (int32_t)esp[1];
-  int32_t buffer = (int32_t)esp[2];
-  unsigned len = (unsigned int)esp[3];
-  
-  char *cml = (char *)esp[1];
+
+
   struct thread *t = thread_current();
 
-  if(esp == NULL || is_kernel_vaddr(FD) || !verify_fix_length(esp, sizeof(esp))) {
+  if(esp == NULL || is_kernel_vaddr(esp[1]) || is_kernel_vaddr(esp[2]) || is_kernel_vaddr(esp[3]) || !verify_fix_length(esp, sizeof(esp))) {
     process_exit(-1);
     thread_exit();
   }
 
+  char *cml = (char *)esp[1];
+  int32_t FD = (int32_t)esp[1];
+  int32_t buffer = (int32_t)esp[2];
+  unsigned len = (unsigned int)esp[3];
 
   switch (*esp /* retrive syscall number */)
   {
@@ -200,7 +201,7 @@ static void syscall_handler(struct intr_frame *f)
   case SYS_READ:
     if (FD != STDOUT_FILENO)
     {
-      if(cml == NULL || is_kernel_vaddr(esp[1]) || is_kernel_vaddr(len) || !verify_fix_length(buffer, len)) {
+      if(cml == NULL || !verify_fix_length(buffer, len)) {
         sys_exit_();
       }
 
