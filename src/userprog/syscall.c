@@ -177,10 +177,31 @@ static void syscall_handler(struct intr_frame *f)
 
   struct thread *t = thread_current();
 
-  if(esp == NULL || is_kernel_vaddr(esp[1]) || is_kernel_vaddr(esp[2]) || is_kernel_vaddr(esp[3]) || !verify_fix_length(esp, sizeof(esp))) {
+  if(esp == NULL ) {
     process_exit(-1);
     thread_exit();
   }
+
+  if(is_kernel_vaddr(esp[1])) {
+    process_exit(-1);
+    thread_exit();
+  }
+  if(is_kernel_vaddr(esp[2])) {
+    process_exit(-1);
+    thread_exit();
+  }
+  if(is_kernel_vaddr(esp[3])) {
+    process_exit(-1);
+    thread_exit();
+  }
+
+  
+  if(!verify_fix_length(esp, sizeof(esp))) {
+    process_exit(-1);
+    thread_exit();
+  }
+
+
 
   char *cml = (char *)esp[1];
   int32_t FD = (int32_t)esp[1];
