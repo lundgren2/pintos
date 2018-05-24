@@ -174,31 +174,33 @@ static void syscall_handler(struct intr_frame *f)
 {
   int32_t *esp = (int32_t *)f->esp;
 
-
   struct thread *t = thread_current();
 
-if(!verify_fix_length(esp, sizeof(esp))) {
-    process_exit(-1);
-    thread_exit();
-  }
-  
   if(esp == NULL ) {
     process_exit(-1);
     thread_exit();
   }
 
-  if(is_kernel_vaddr(esp[1])) { // sc-bad-sp and wait-killed fails
+if(!verify_fix_length(esp, sizeof(esp))) {
     process_exit(-1);
     thread_exit();
+  }
+
+int sys_read_arg_count = argc[ esp[0] ];
+
+if(is_kernel_vaddr(esp[1])) { 
+  process_exit(-1);
+  thread_exit();
   }
   if(is_kernel_vaddr(esp[2])) {
     process_exit(-1);
     thread_exit();
   }
-  if(is_kernel_vaddr(esp[3])) { // sc-bad-write fails
-    process_exit(-1);
-    thread_exit();
-  }
+  
+if (!verify_fix_length(esp, (sys_read_arg_count * 4 + 1) ) ) {
+  process_exit(-1);
+  thread_exit();
+}
 
   
   
@@ -208,7 +210,7 @@ if(!verify_fix_length(esp, sizeof(esp))) {
   char *cml = (char *)esp[1];
   int32_t FD = (int32_t)esp[1];
   int32_t buffer = (int32_t)esp[2];
-  unsigned len = (unsigned int)esp[3];
+  // unsigned len = (unsigned int)esp[3];
 
   switch (*esp /* retrive syscall number */)
   {
@@ -224,18 +226,18 @@ if(!verify_fix_length(esp, sizeof(esp))) {
   case SYS_READ:
     if (FD != STDOUT_FILENO)
     {
-      if(cml == NULL || !verify_fix_length(buffer, len)) {
+      if(cml == NULL || is_kernel_vaddr(esp[3]) || !verify_fix_length(buffer, esp[3])) {
         sys_exit_();
       }
 
       if (FD == STDIN_FILENO)
       {
-        int32_t nr_bytes = sys_keyboard_read_((char *)FD, (char *)buffer, (unsigned)len);
+        int32_t nr_bytes = sys_keyboard_read_((char *)FD, (char *)buffer, (unsigned)esp[3]);
         f->eax = nr_bytes;
       }
       else
       { // om file
-        int32_t nr_bytes = sys_read_(FD, (char *)buffer, (unsigned)len);
+        int32_t nr_bytes = sys_read_(FD, (char *)buffer, (unsigned)esp[3]);
         f->eax = nr_bytes;
       }
     }
@@ -247,7 +249,7 @@ if(!verify_fix_length(esp, sizeof(esp))) {
   case SYS_WRITE:
     if (FD != STDIN_FILENO)
     {
-      if(cml == NULL || is_kernel_vaddr(esp[1]) || is_kernel_vaddr(len) || !verify_fix_length(buffer, len)) {
+      if(cml == NULL || is_kernel_vaddr(esp[1]) || is_kernel_vaddr(esp[3]) || !verify_fix_length(buffer, esp[3])) {
         sys_exit_();
         f->eax = -1;
         break;
@@ -255,12 +257,12 @@ if(!verify_fix_length(esp, sizeof(esp))) {
 
       if (FD == STDOUT_FILENO)
       {
-        int32_t nr_bytes = sys_console_write_((char *)FD, (char *)buffer, (unsigned)len);
+        int32_t nr_bytes = sys_console_write_((char *)FD, (char *)buffer, (unsigned)esp[3]);
         f->eax = nr_bytes;
       }
       else
       { // Hantera file istället
-        int32_t nr_bytes = sys_write_(FD, (char *)buffer, (unsigned)len);
+        int32_t nr_bytes = sys_write_(FD, (char *)buffer, (unsigned)esp[3]);
         f->eax = nr_bytes;
       }
     }
