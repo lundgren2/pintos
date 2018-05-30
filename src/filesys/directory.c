@@ -8,10 +8,10 @@
 
 #include "threads/synch.h" // lab20
 
-// struct lock directory_lock;
+struct lock directory_lock;
 void directory_init(void)
 {
-  // lock_init(&dir->l);
+  lock_init(&directory_lock);
 }
 
 // TODO: CHECK SYNC
@@ -20,7 +20,6 @@ struct dir
 {
   struct inode *inode; /* Backing store. */
   off_t pos;           /* Current position. */
-  struct lock l;
 };
 
 /* A single directory entry. */
@@ -43,18 +42,20 @@ bool dir_create(disk_sector_t sector, size_t entry_cnt)
 struct dir *
 dir_open(struct inode *inode)
 {
+  lock_acquire(&directory_lock);
   struct dir *dir = calloc(1, sizeof *dir);
   if (inode != NULL && dir != NULL)
   {
     dir->inode = inode;
     dir->pos = 0;
-    lock_init(&dir->l); // lab20
+    lock_release(&directory_lock); // lab20
     return dir;
   }
   else
   {
     inode_close(inode);
     free(dir);
+    lock_release(&directory_lock); // lab20
     return NULL;
   }
 }
@@ -78,11 +79,13 @@ dir_reopen(struct dir *dir)
 /* Destroys DIR and frees associated resources. */
 void dir_close(struct dir *dir)
 {
+  lock_acquire(&directory_lock); // lab20
   if (dir != NULL)
   {
     inode_close(dir->inode);
     free(dir);
   }
+  lock_release(&directory_lock); // lab20
 }
 
 /* Returns the inode encapsulated by DIR. */
@@ -131,12 +134,12 @@ bool dir_lookup(const struct dir *dir, const char *name,
 
   ASSERT(dir != NULL);
   ASSERT(name != NULL);
-
+  lock_acquire(&directory_lock); // lab20
   if (lookup(dir, name, &e, NULL))
     *inode = inode_open(e.inode_sector);
   else
     *inode = NULL;
-
+  lock_release(&directory_lock); // lab20
   return *inode != NULL;
 }
 
@@ -155,11 +158,11 @@ bool dir_add(struct dir *dir, const char *name, disk_sector_t inode_sector)
   ASSERT(dir != NULL);
   ASSERT(name != NULL);
 
-  lock_acquire(&dir->l); // lab20
-  
+  lock_acquire(&directory_lock); // lab20
   /* Check NAME for validity. */
-  if (*name == '\0' || strlen(name) > NAME_MAX) {
-    lock_release(&dir->l); // lab20
+  if (*name == '\0' || strlen(name) > NAME_MAX)
+  {
+    lock_release(&directory_lock); // lab20
     return false;
   }
 
@@ -186,7 +189,7 @@ bool dir_add(struct dir *dir, const char *name, disk_sector_t inode_sector)
   success = inode_write_at(dir->inode, &e, sizeof e, ofs) == sizeof e;
 
 done:
-  lock_release(&dir->l); // lab20
+  lock_release(&directory_lock); // lab20
   return success;
 }
 
@@ -203,8 +206,7 @@ bool dir_remove(struct dir *dir, const char *name)
   ASSERT(dir != NULL);
   ASSERT(name != NULL);
 
-  lock_acquire(&dir->l); // lab20
-
+  lock_acquire(&directory_lock); // lab20
   /* Find directory entry. */
   if (!lookup(dir, name, &e, &ofs))
     goto done;
@@ -225,7 +227,7 @@ bool dir_remove(struct dir *dir, const char *name)
 
 done:
   inode_close(inode);
-  lock_release(&dir->l); // lab20
+  lock_release(&directory_lock); // lab20
   return success;
 }
 
@@ -235,7 +237,7 @@ done:
 bool dir_readdir(struct dir *dir, char name[NAME_MAX + 1])
 {
   struct dir_entry e;
-  lock_acquire(&dir->l);
+  lock_acquire(&directory_lock);
 
   while (inode_read_at(dir->inode, &e, sizeof e, dir->pos) == sizeof e)
   {
@@ -243,10 +245,10 @@ bool dir_readdir(struct dir *dir, char name[NAME_MAX + 1])
     if (e.in_use)
     {
       strlcpy(name, e.name, NAME_MAX + 1);
-      lock_release(&dir->l); // lab20
+      lock_release(&directory_lock); // lab20
       return true;
     }
   }
-  lock_release(&dir->l); // lab20
+  lock_release(&directory_lock); // lab20
   return false;
 }
