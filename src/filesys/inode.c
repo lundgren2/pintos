@@ -165,9 +165,11 @@ inode_reopen(struct inode *inode)
 {
   if (inode != NULL)
   {
-    //lock_acquire(&inode->lock); // lab20
+    // lock_acquire(&inode_list_lock); // lab20
+    // lock_acquire(&inode->lock);     // lab20
     inode->open_cnt++;
-    //lock_release(&inode->lock); // lab20
+    // lock_release(&inode->lock);     // lab20
+    // lock_release(&inode_list_lock); // lab20
   }
   return inode;
 }
@@ -232,15 +234,15 @@ off_t inode_read_at(struct inode *inode, void *buffer_, off_t size, off_t offset
   uint8_t *bounce = NULL;
 
   // lab21 read queue increase reader
-  lock_acquire(&inode->lock);
+  lock_acquire(&inode_list_lock);
   lock_acquire(&inode->queue_lock);
   inode->queue_cnt++;        // increase queue counter
-  if (inode->queue_cnt == 1) // check if only first to matk as busy
+  if (inode->queue_cnt == 1) // check if only first to mark as busy
   {
     sema_down(&inode->sema); // mark as busy
   }
   lock_release(&inode->queue_lock);
-  lock_release(&inode->lock);
+  lock_release(&inode_list_lock);
 
   while (size > 0)
   {

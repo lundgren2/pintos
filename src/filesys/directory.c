@@ -5,7 +5,6 @@
 #include "filesys/filesys.h"
 #include "filesys/inode.h"
 #include "threads/malloc.h"
-
 #include "threads/synch.h" // lab20
 
 struct lock directory_lock;
@@ -237,7 +236,7 @@ done:
 bool dir_readdir(struct dir *dir, char name[NAME_MAX + 1])
 {
   struct dir_entry e;
-  lock_acquire(&directory_lock);
+  //lock_acquire(&directory_lock);
 
   while (inode_read_at(dir->inode, &e, sizeof e, dir->pos) == sizeof e)
   {
@@ -245,10 +244,10 @@ bool dir_readdir(struct dir *dir, char name[NAME_MAX + 1])
     if (e.in_use)
     {
       strlcpy(name, e.name, NAME_MAX + 1);
-      lock_release(&directory_lock); // lab20
+      //lock_release(&directory_lock); // lab20
       return true;
     }
   }
-  lock_release(&directory_lock); // lab20
+  //lock_release(&directory_lock); // lab20
   return false;
 }
