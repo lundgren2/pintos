@@ -310,10 +310,11 @@ start_process(struct parameters_to_start_process *parameters)
     sema_init(&process->sema, 0);
     parameters->init_ok = true;
 
-    // LOOKUP: how to check if the SPL is full
-    process_list_insert(&SPL, process);
-
-    // debug("==== PROCESS %s pid: %d Added to process List\n", process->name, process->id);
+    // deadline 2 fix
+    if (process_list_insert(&SPL, process) == -1)
+    {
+      thread_exit();
+    }
 
     // HACK if_.esp -= 12; /* Unacceptable solution. */
     if_.esp = setup_main_stack(parameters->command_line, if_.esp);
@@ -425,11 +426,7 @@ void process_cleanup(void)
 
   // remove if exists in filemap
   struct map *m = &cur->file_map;
-  int mapFound = map_find(m, cur->tid);
-  if ((int)mapFound != -1)
-  {
-    map_remove_if(m, mapFound, 0);
-  }
+  map_remove_if(m);
 
   // Set exit status for the process
   struct Process *process = process_list_find(&SPL, cur->tid);
@@ -438,15 +435,9 @@ void process_cleanup(void)
     if (!process->free)
     {
       status = process->exit_status;
-      struct Process *process_parent = process_list_find(&SPL, process->parent_id);
-      if (process_parent != NULL)
-      {
-        process->parent_alive = false; // sätter processen som vi dödars parent till false.
-        // TODO: Sätt parent_alive på alla processens barn
-      }
+      process_parent_cleanup(&SPL, process->id); // deadline 2 fix: set parent_alive to false
     }
   }
-  // TODO: Cleanup parent_alive i plic.c
 
   /* Later tests DEPEND on this output to work correct. You will have
    * to find the actual exit status in your process list. It is

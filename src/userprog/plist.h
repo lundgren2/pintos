@@ -25,6 +25,7 @@ int process_list_insert(struct System_process_list *SPL, struct Process *p);
 struct Process *process_list_find(struct System_process_list *SPL, int id);
 int process_list_remove(struct System_process_list *SPL, int id);
 void process_list_print(struct System_process_list *SPL);
+void process_parent_cleanup(struct System_process_list *SPL, int parent_id); // deadline 2 fix
 
 /* Place functions to handle a running process here (process list).
 

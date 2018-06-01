@@ -17,7 +17,6 @@ void process_list_init(struct System_process_list *SPL)
   }
 }
 
-// TODO: Check if insert works after NULL fix
 int process_list_insert(struct System_process_list *SPL, struct Process *p)
 {
   if (SPL == NULL)
@@ -102,5 +101,26 @@ void process_list_print(struct System_process_list *SPL)
     }
     debug("\n");
     lock_release(&SPL->l);
+  }
+}
+
+void process_parent_cleanup(struct System_process_list *SPL, int parent_id) // deadline 2 fix
+{
+  if (SPL == NULL)
+  {
+    return;
+  }
+  struct Process *process = NULL;
+  for (int i = 0; i < MAX_PROCESS; i++)
+  {
+    process = SPL->plist_[i];
+    // Check if child of the dead parent
+    if (process != NULL && process->parent_id == parent_id)
+    {
+      if (process->parent_alive)
+      {
+        process->parent_alive = false;
+      }
+    }
   }
 }
