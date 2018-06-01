@@ -44,31 +44,31 @@ bool free_map_allocate(size_t cnt, disk_sector_t *sectorp)
 /* Makes CNT sectors starting at SECTOR available for use. */
 void free_map_release(disk_sector_t sector, size_t cnt)
 {
-  lock_acquire(&free_map_lock); // lab20
+  // lock_acquire(&free_map_lock); // lab20
   ASSERT(bitmap_all(free_map, sector, cnt));
   bitmap_set_multiple(free_map, sector, cnt, false);
   bitmap_write(free_map, free_map_file);
-  lock_release(&free_map_lock); // lab20
+  // lock_release(&free_map_lock); // lab20
 }
 
 /* Opens the free map file and reads it from disk. */
 void free_map_open(void)
 {
-  lock_acquire(&free_map_lock); // lab20
+  // lock_acquire(&free_map_lock); // lab20
   free_map_file = file_open(inode_open(FREE_MAP_SECTOR));
   if (free_map_file == NULL)
     PANIC("can't open free map");
   if (!bitmap_read(free_map, free_map_file))
     PANIC("can't read free map");
-  lock_release(&free_map_lock); // lab20
+  // lock_release(&free_map_lock); // lab20
 }
 
 /* Writes the free map to disk and closes the free map file. */
 void free_map_close(void)
 {
-  lock_acquire(&free_map_lock); // lab20
+  //lock_acquire(&free_map_lock); // lab20
   file_close(free_map_file);
-  lock_release(&free_map_lock); // lab20
+  // lock_release(&free_map_lock); // lab20
 }
 
 /* Creates a new free map file on disk and writes the free map to
