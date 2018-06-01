@@ -23,13 +23,13 @@ key_t map_insert(struct map *m, value_t v)
       return i + 2;
     }
   }
-  // free(v); // remove pointer to uninserted file
   return -1;
 }
 
 value_t map_find(struct map *m, key_t k)
 {
-  if(k > MAP_SIZE) {
+  if (k > MAP_SIZE)
+  {
     return -1;
   }
   if (m->content[k - 2] == NULL)
@@ -41,7 +41,8 @@ value_t map_find(struct map *m, key_t k)
 
 value_t map_remove(struct map *m, key_t k)
 {
-  if(k > MAP_SIZE) {
+  if (k > MAP_SIZE)
+  {
     return NULL;
   }
   value_t tmp = m->content[k - 2];
@@ -49,19 +50,22 @@ value_t map_remove(struct map *m, key_t k)
   return tmp;
 }
 
-void map_remove_if(struct map *m, value_t v, int aux)
+void map_remove_if(struct map *m)
 {
-  if (v != NULL && m != NULL)
+  if (m != NULL)
   {
     for (int key = 0; key < MAP_SIZE; key++)
     {
-      if (m->content[key] != NULL && v == map_find(m, key))
+      if (m->content[key] != NULL && map_find(m, key) != -1)
       {
-        debug("map_remove_if map[%d]: %d\n", key, v);
-          map_remove(m, key);
+        // debug("map_remove_if map[%d]: %d\n", key, v);
+        file_close(m->content[key]); // Fix for deadline 1: close file before remove
+        map_remove(m, key);
       }
     }
-   } else {
+  }
+  else
+  {
     debug("# v is null\n");
   }
 }
