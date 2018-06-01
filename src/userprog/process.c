@@ -170,7 +170,7 @@ void process_exit(int status)
  * relevant debug information in a clean, readable format. */
 void process_print_list()
 {
-  // process_list_print(&SPL);
+  process_list_print(&SPL);
 }
 
 struct parameters_to_start_process
@@ -441,10 +441,12 @@ void process_cleanup(void)
       struct Process *process_parent = process_list_find(&SPL, process->parent_id);
       if (process_parent != NULL)
       {
-        process->parent_alive = false;
+        process->parent_alive = false; // sätter processen som vi dödars parent till false.
+        // TODO: Sätt parent_alive på alla processens barn
       }
     }
   }
+  // TODO: Cleanup parent_alive i plic.c
 
   /* Later tests DEPEND on this output to work correct. You will have
    * to find the actual exit status in your process list. It is
