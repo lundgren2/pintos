@@ -18,7 +18,7 @@ void free_map_init(void)
     PANIC("bitmap creation failed--disk is too large");
   bitmap_mark(free_map, FREE_MAP_SECTOR);
   bitmap_mark(free_map, ROOT_DIR_SECTOR);
-  lock_init(&free_map_lock); // lab20
+  lock_init(&free_map_lock);
 }
 
 /* Allocates CNT consecutive sectors from the free map and stores
@@ -28,7 +28,7 @@ void free_map_init(void)
 bool free_map_allocate(size_t cnt, disk_sector_t *sectorp)
 {
   disk_sector_t sector;
-
+  lock_acquire(&free_map_lock);
   sector = bitmap_scan_and_flip(free_map, 0, cnt, false);
   if (sector != BITMAP_ERROR && free_map_file != NULL && !bitmap_write(free_map, free_map_file))
   {
@@ -38,44 +38,38 @@ bool free_map_allocate(size_t cnt, disk_sector_t *sectorp)
 
   if (sector != BITMAP_ERROR)
     *sectorp = sector;
+  lock_release(&free_map_lock);
   return sector != BITMAP_ERROR;
 }
 
 /* Makes CNT sectors starting at SECTOR available for use. */
 void free_map_release(disk_sector_t sector, size_t cnt)
 {
-  // lock_acquire(&free_map_lock); // lab20
   ASSERT(bitmap_all(free_map, sector, cnt));
   bitmap_set_multiple(free_map, sector, cnt, false);
   bitmap_write(free_map, free_map_file);
-  // lock_release(&free_map_lock); // lab20
 }
 
 /* Opens the free map file and reads it from disk. */
 void free_map_open(void)
 {
-  // lock_acquire(&free_map_lock); // lab20
   free_map_file = file_open(inode_open(FREE_MAP_SECTOR));
   if (free_map_file == NULL)
     PANIC("can't open free map");
   if (!bitmap_read(free_map, free_map_file))
     PANIC("can't read free map");
-  // lock_release(&free_map_lock); // lab20
 }
 
 /* Writes the free map to disk and closes the free map file. */
 void free_map_close(void)
 {
-  //lock_acquire(&free_map_lock); // lab20
   file_close(free_map_file);
-  // lock_release(&free_map_lock); // lab20
 }
 
 /* Creates a new free map file on disk and writes the free map to
    it. */
 void free_map_create(void)
 {
-  lock_acquire(&free_map_lock); // lab20
   /* Create inode. */
   if (!inode_create(FREE_MAP_SECTOR, bitmap_file_size(free_map)))
     PANIC("free map creation failed");
@@ -86,5 +80,4 @@ void free_map_create(void)
     PANIC("can't open free map");
   if (!bitmap_write(free_map, free_map_file))
     PANIC("can't write free map");
-  lock_release(&free_map_lock); // lab20
 }
